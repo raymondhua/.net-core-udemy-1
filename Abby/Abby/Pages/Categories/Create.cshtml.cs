@@ -27,6 +27,7 @@ public class CreateModel : PageModel
         {
             await _db.Category.AddAsync(Category);
             await _db.SaveChangesAsync();
+            TempData["success"] = "Category created successfully";
             return RedirectToPage("Index");
         }
         return Page();
