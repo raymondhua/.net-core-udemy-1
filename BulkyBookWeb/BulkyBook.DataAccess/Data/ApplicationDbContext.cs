@@ -10,5 +10,6 @@ public class ApplicationDbContext:DbContext
 
 	}
 	public DbSet<Category> Categories { get; set; }
+    public DbSet<Cover> Cover { get; set; }
 }
 
