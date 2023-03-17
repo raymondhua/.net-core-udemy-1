@@ -1,7 +1,9 @@
 ﻿using BulkyBook.DataAccess.Repository;
 using BulkyBook.DataAccess.Repository.IRepository;
 using BulkyBook.Models;
+using BulkyBook.Models.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace BulkyBookWeb.Areas.Admin.Controllers
 {
@@ -18,45 +20,41 @@ namespace BulkyBookWeb.Areas.Admin.Controllers
             return View(objCoverList);
         }
         //GET
-        public IActionResult Create()
+        public IActionResult Upsert(int? id)
         {
-
-            return View();
-        }
-        //POST
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Create(CoverType obj)
-        {
-            if (ModelState.IsValid)
+            ProductVM productVM = new()
             {
-                _unitOfWork.CoverType.Add(obj);
-                _unitOfWork.Save();
-                TempData["success"] = "Cover created successfully";
-                return RedirectToAction("Index");
-            }
-            return View(obj);
-        }
-        //GET
-        public IActionResult Edit(int? id)
-        {
+                Product = new(),
+                CategoryList = _unitOfWork.Category.GetAll().Select(i => new SelectListItem
+                {
+                    Text = i.Name,
+                    Value = i.Id.ToString()
+                }),
+                CoverTypeList = _unitOfWork.CoverType.GetAll().Select(i => new SelectListItem
+                {
+                    Text = i.Name,
+                    Value = i.Id.ToString()
+                }),
+            };
+
             if (id == null || id == 0)
             {
-                return NotFound();
+                //create product
+                //ViewBag.CategoryList = CategoryList;
+                //ViewData["CoverTypeList"] = CoverTypeList;
+                return View(productVM);
             }
-            //var categoryFromDb = _unitOfWork.Category.Find(id);
-            var coverFromDbFirst = _unitOfWork.CoverType.GetFirstOrDefault(u => u.Id == id);
-            //var categoryFromDbSingle = _unitOfWork.Category.SingleOrDefault(u => u.Id == id);
-            if (coverFromDbFirst == null)
+            else
             {
-                return NotFound();
+                //update product
             }
-            return View(coverFromDbFirst);
+
+            return View(productVM);
         }
         //POST
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(CoverType obj)
+        public IActionResult Upsert(CoverType obj)
         {
             if (ModelState.IsValid)
             {
