@@ -119,7 +119,6 @@ public class ProductController : Controller
         _unitOfWork.Product.Remove(obj);
         _unitOfWork.Save();
         return Json(new { success = true, message = "Delete Successful" });
-        return RedirectToAction("Index");
     }
     #endregion
 }
