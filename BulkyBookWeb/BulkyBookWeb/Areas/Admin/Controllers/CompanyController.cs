@@ -6,17 +6,17 @@ using Microsoft.AspNetCore.Mvc;
 namespace BulkyBookWeb.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    public class CoverTypeController : Controller
+    public class CompanyController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
-        public CoverTypeController(IUnitOfWork unitOfWork)
+        public CompanyController(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
         }
         public IActionResult Index()
         {
-            IEnumerable<CoverType> objCoverList = _unitOfWork.CoverType.GetAll();
-            return View(objCoverList);
+            IEnumerable<Company> objCompanyList = _unitOfWork.Company.GetAll();
+            return View(objCompanyList);
         }
         //GET
         public IActionResult Create()
@@ -27,13 +27,13 @@ namespace BulkyBookWeb.Areas.Admin.Controllers
         //POST
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(CoverType obj)
+        public IActionResult Create(Company obj)
         {
             if (ModelState.IsValid)
             {
-                _unitOfWork.CoverType.Add(obj);
+                _unitOfWork.Company.Add(obj);
                 _unitOfWork.Save();
-                TempData["success"] = "Cover created successfully";
+                TempData["success"] = "Company created successfully";
                 return RedirectToAction("Index");
             }
             return View(obj);
@@ -45,25 +45,25 @@ namespace BulkyBookWeb.Areas.Admin.Controllers
             {
                 return NotFound();
             }
-            //var categoryFromDb = _unitOfWork.Category.Find(id);
-            var coverFromDbFirst = _unitOfWork.CoverType.GetFirstOrDefault(u => u.Id == id);
-            //var categoryFromDbSingle = _unitOfWork.Category.SingleOrDefault(u => u.Id == id);
-            if (coverFromDbFirst == null)
+            //var companyFromDb = _unitOfWork.Company.Find(id);
+            var companyFromDbFirst = _unitOfWork.Company.GetFirstOrDefault(u => u.Id == id);
+            //var companyFromDbSingle = _unitOfWork.Company.SingleOrDefault(u => u.Id == id);
+            if (companyFromDbFirst == null)
             {
                 return NotFound();
             }
-            return View(coverFromDbFirst);
+            return View(companyFromDbFirst);
         }
         //POST
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(CoverType obj)
+        public IActionResult Edit(Company obj)
         {
             if (ModelState.IsValid)
             {
-                _unitOfWork.CoverType.Update(obj);
+                _unitOfWork.Company.Update(obj);
                 _unitOfWork.Save();
-                TempData["success"] = "Cover updated successfully";
+                TempData["success"] = "Company updated successfully";
                 return RedirectToAction("Index");
             }
             return View(obj);
@@ -75,29 +75,37 @@ namespace BulkyBookWeb.Areas.Admin.Controllers
             {
                 return NotFound();
             }
-            //var categoryFromDb = _db.Categories.Find(id);
-            var coverFromDbFirst = _unitOfWork.CoverType.GetFirstOrDefault(u => u.Id == id);
-            //var categoryFromDbSingle = _db.Categories.SingleOrDefault(u => u.Id == id);
-            if (coverFromDbFirst == null)
+            //var companyFromDb = _db.Company.Find(id);
+            var companyFromDbFirst = _unitOfWork.Company.GetFirstOrDefault(u => u.Id == id);
+            //var categoryFromDbSingle = _db.Company.SingleOrDefault(u => u.Id == id);
+            if (companyFromDbFirst == null)
             {
                 return NotFound();
             }
-            return View(coverFromDbFirst);
+            return View(companyFromDbFirst);
         }
         //POST
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public IActionResult DeletePOST(int id)
         {
-            var obj = _unitOfWork.CoverType.GetFirstOrDefault(u => u.Id == id);
+            var obj = _unitOfWork.Company.GetFirstOrDefault(u => u.Id == id);
             if (obj == null)
             {
                 return NotFound();
             }
-            _unitOfWork.CoverType.Remove(obj);
+            _unitOfWork.Company.Remove(obj);
             _unitOfWork.Save();
-            TempData["success"] = "Cover deleted successfully";
+            TempData["success"] = "Company deleted successfully";
             return RedirectToAction("Index");
         }
+        #region API CALLS
+        [HttpGet]
+        public IActionResult GetAll()
+        {
+            var companyList = _unitOfWork.Company.GetAll();
+            return Json(new { data = companyList });
+        }
+        #endregion
     }
 }
