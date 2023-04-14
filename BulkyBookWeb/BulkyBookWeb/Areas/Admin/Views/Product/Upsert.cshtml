@@ -1,6 +1,6 @@
 ﻿@model BulkyBook.Models.ViewModels.ProductVM
 @{
-    ViewData["Title"] = "Upsert Product";
+    ViewData["Title"] = (Model.Product.Id != 0 ? "Update" : "Create") + " Product";
 }
 
 <form method="post" asp-action="Upsert" enctype="multipart/form-data">
@@ -11,7 +11,7 @@
         <div class="col-10">
             <div class="border p-3 mt-4 row">
                 <div class="col-12 pb-2">
-                    <h2 class="text-primary">@(Model.Product.Id != 0 ? "Update" : "Create") Product</h2>
+                    <h2 class="text-primary">@ViewData["Title"]</h2>
                     <hr />
                 </div>
                 @*<div asp-validation-summary="All"></div>*@
