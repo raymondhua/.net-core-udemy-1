@@ -21,8 +21,8 @@ jobs:
       with:
         dotnet-version: 6.0.x
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore BulkyBookWeb/BulkyBookWeb/BulkyBookWeb.csproj
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build BulkyBookWeb/BulkyBookWeb/BulkyBookWeb.csproj --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test BulkyBookWeb/BulkyBookWeb/BulkyBookWeb.csproj --no-build --verbosity normal
