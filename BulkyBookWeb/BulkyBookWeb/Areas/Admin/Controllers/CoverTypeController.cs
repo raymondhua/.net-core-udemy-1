@@ -59,30 +59,24 @@ public class CoverTypeController : Controller
     [ValidateAntiForgeryToken]
     public IActionResult Edit(CoverType obj)
     {
-        if (ModelState.IsValid)
-        {
-            _unitOfWork.CoverType.Update(obj);
-            _unitOfWork.Save();
-            TempData["success"] = "Cover updated successfully";
-            return RedirectToAction("Index");
-        }
-        return View(obj);
+        if (!ModelState.IsValid) return View(obj);
+        _unitOfWork.CoverType.Update(obj);
+        _unitOfWork.Save();
+        TempData["success"] = "Cover updated successfully";
+        return RedirectToAction("Index");
+
     }
     //GET
     public IActionResult Delete(int? id)
     {
-        if (id == null || id == 0)
+        if (id is null or 0)
         {
             return NotFound();
         }
         //var categoryFromDb = _db.Categories.Find(id);
         var coverFromDbFirst = _unitOfWork.CoverType.GetFirstOrDefault(u => u.Id == id);
         //var categoryFromDbSingle = _db.Categories.SingleOrDefault(u => u.Id == id);
-        if (coverFromDbFirst == null)
-        {
-            return NotFound();
-        }
-        return View(coverFromDbFirst);
+        return coverFromDbFirst != null ? View(coverFromDbFirst) : NotFound();
     }
     //POST
     [HttpPost, ActionName("Delete")]
@@ -91,9 +85,7 @@ public class CoverTypeController : Controller
     {
         var obj = _unitOfWork.CoverType.GetFirstOrDefault(u => u.Id == id);
         if (obj == null)
-        {
             return NotFound();
-        }
         _unitOfWork.CoverType.Remove(obj);
         _unitOfWork.Save();
         TempData["success"] = "Cover deleted successfully";
