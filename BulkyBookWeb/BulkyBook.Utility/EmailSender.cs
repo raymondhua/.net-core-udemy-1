@@ -12,12 +12,10 @@ namespace BulkyBook.Utility
 {
     public class EmailSender : IEmailSender
     {
-        private string _emailAddress;
-        private string _password;
+        private readonly EmailSettings _emailConfig;
         public EmailSender(IConfiguration configuration)
         {
-            _emailAddress = configuration.GetValue<string>("EmailSettings:EmailAddress");
-            _password = configuration.GetValue<string>("EmailSettings:Password");
+            _emailConfig = configuration.GetSection("EmailSettings").Get<EmailSettings>();
         }
         public Task SendEmailAsync(string email, string subject, string htmlMessage)
         {
@@ -31,7 +29,7 @@ namespace BulkyBook.Utility
             using (var emailClient = new SmtpClient())
             {
                 emailClient.Connect("smtp.gmail.com", 587, MailKit.Security.SecureSocketOptions.StartTls);
-                emailClient.Authenticate(_emailAddress, _password);
+                emailClient.Authenticate(_emailConfig.EmailAddress, _emailConfig.Password);
                 emailClient.Send(emailToSend);
                 emailClient.Disconnect(true);
             }

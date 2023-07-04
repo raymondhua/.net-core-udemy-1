@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "mssql1": {
+      "serviceConnectorResourceId": "/subscriptions/[parameters('subscriptionId')]/resourcegroups/[parameters('resourceGroupName')]/providers/Microsoft.Web/sites/BulkyBookRay/providers/Microsoft.ServiceLinker/linkers/ConnectionStringsTbhhh_BA787DA32C",
+      "secretStore": "AzureAppSettings",
+      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.Sql/servers/tbhua/databases/dotnetmastery_db",
+      "type": "mssql.azure",
+      "connectionId": "ConnectionStrings:Tbhhh",
+      "dynamicId": null
+    }
+  }
+}
