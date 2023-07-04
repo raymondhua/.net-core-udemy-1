@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using BulkyBook.Models;
 using Microsoft.EntityFrameworkCore;
 using BulkyBook.Utility;
+using Microsoft.Extensions.Configuration;
 
 namespace BulkyBook.DataAccess.DbInitializer
 {
@@ -22,7 +23,7 @@ namespace BulkyBook.DataAccess.DbInitializer
         public DbInitializer(
             UserManager<IdentityUser> userManager,
             RoleManager<IdentityRole> roleManager,
-            ApplicationDbContext db)
+            ApplicationDbContext db, IConfiguration iConfiguration)
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -66,6 +67,24 @@ namespace BulkyBook.DataAccess.DbInitializer
             ApplicationUser user = _db.ApplicationUsers.FirstOrDefault(u => u.Email == "userName@example.com");
             _userManager.AddToRoleAsync(user, SD.Role_Admin).GetAwaiter().GetResult();
             return;
+            //string initialAdminEmail = _configuration.GetConnectionString("InitialAdminSettings:Email");
+            //string initialAdminPassword = _configuration.GetConnectionString("InitialAdminSettings:Password");
+            //// if roles are not created, it gets created
+            //_userManager.CreateAsync(new ApplicationUser
+            //{
+            //    UserName = initialAdminEmail,
+            //    Email = initialAdminEmail,
+            //    Name = "Ray Jackson",
+            //    PhoneNumber = "0271938485",
+            //    StreetAddress = "Test 12 Ave",
+            //    State = "Otago",
+            //    PostalCode = "9023",
+            //    City = "Dunedin"
+            //}, initialAdminPassword).GetAwaiter().GetResult();
+
+            //ApplicationUser user = _db.ApplicationUsers.FirstOrDefault(u => u.Email == initialAdminEmail);
+            //_userManager.AddToRoleAsync(user, SD.Role_Admin).GetAwaiter().GetResult();
+            //return;
         }
     }
 }

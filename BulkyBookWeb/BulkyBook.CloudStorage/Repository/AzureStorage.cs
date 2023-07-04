@@ -179,6 +179,33 @@ namespace BulkyBook.CloudStorage.Repository
             return null;
         }
 
+        public async Task<bool> ImageExists(string blobFilename)
+        {
+            // Get a reference to a container named in appsettings.json
+            BlobContainerClient client = new BlobContainerClient(_storageConfig.ConnectionString, _storageConfig.ContainerName);
+
+            try
+            {
+                // Get a reference to the blob uploaded earlier from the API in the container from configuration settings
+                BlobClient file = client.GetBlobClient(blobFilename);
+
+                // Check if the file exists in the container
+                if (await file.ExistsAsync())
+                {
+                    return true;
+                }
+            }
+            catch (RequestFailedException ex)
+                when (ex.ErrorCode == BlobErrorCode.BlobNotFound)
+            {
+                // Log error to console
+                _logger.LogError($"File {blobFilename} was not found.");
+            }
+
+            // File does not exist, return null and handle that in requesting method
+            return false;
+        }
+
         public async Task<BlobResponseDto> DeleteAsync(string blobFilename)
         {
             BlobContainerClient client = new BlobContainerClient(_storageConfig.ConnectionString, _storageConfig.ContainerName);

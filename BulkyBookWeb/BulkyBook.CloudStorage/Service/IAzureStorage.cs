@@ -31,5 +31,7 @@ namespace BulkyBook.CloudStorage.Service
         /// </summary>
         /// <returns>Blobs in a list</returns>
         Task<List<BlobDto>> ListAsync();
+
+        Task<bool> ImageExists(string blobFilename);
     }
 }
