@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using BulkyBook.CloudStorage.Service;
 using BulkyBook.DataAccess.Repository.IRepository;
 using BulkyBook.Models;
 using BulkyBook.Models.ViewModels;
@@ -17,14 +18,16 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IEmailSender _emailSender;
+        public readonly IAzureStorage _azureStorage;
         [BindProperty]
         public ShoppingCartVM ShoppingCartVM { get; set; }
         public int OrderTotal { get; set; }
 
-        public CartController(IUnitOfWork unitOfWork, IEmailSender emailSender)
+        public CartController(IUnitOfWork unitOfWork, IEmailSender emailSender, IAzureStorage azureStorage)
         {
 	        _unitOfWork = unitOfWork;
             _emailSender = emailSender;
+            _azureStorage = azureStorage;
         }
         public IActionResult Index()
         {
@@ -41,7 +44,7 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
             {
                 cart.Price = GetPriceBasedOnQuantity(cart.Count, cart.Product.Price, cart.Product.Price50,
                     cart.Product.Price100);
-                cart.Product.ImageUrl = _unitOfWork.Product.AppendSASTokenToURL(cart.Product);
+                cart.Product.ImageUrl = _unitOfWork.Product.AppendSasTokenToUrl(cart.Product);
                 ShoppingCartVM.OrderHeader.OrderTotal += (cart.Price * cart.Count);
             }
             return View(ShoppingCartVM);
@@ -191,7 +194,15 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
             HttpContext.Session.Clear();
             _unitOfWork.ShoppingCart.RemoveRange(shoppingCarts);
             _unitOfWork.Save();
-            return View(id);
+            var orderConfirmationImage = _azureStorage.GenerateSASResult();
+            string orderConfirmationImageUrl = "https://" + orderConfirmationImage.Uri.Host + orderConfirmationImage.Uri.AbsolutePath + "/" + SD.OrderConfirmationImageFileName +
+                                               orderConfirmationImage.Uri.Query;
+            OrderConformationVM OrderConformationVM = new OrderConformationVM()
+            {
+                OrderId = id,
+                OrderConfirmationImageURL = orderConfirmationImageUrl
+            };
+            return View(OrderConformationVM);
         }
 
         public IActionResult Plus(int cartId)

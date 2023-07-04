@@ -22,7 +22,7 @@ namespace BulkyBook.CloudStorage.Service
 
         Task<bool> ImageExists(string blobFilename);
 
-
-        Task<BlobClient> GenerateSASToken(string blobFileName);
+        BlobClient GenerateSASResult();
+        Task<BlobClient> GenerateSASToken();
     }
 }

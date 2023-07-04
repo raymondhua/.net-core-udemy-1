@@ -24,7 +24,7 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
-        IEnumerable<Product> productList = _unitOfWork.Product.AppendSASTokensForImages(_unitOfWork.Product.GetAll(includeProperties: "Category,CoverType"));
+        IEnumerable<Product> productList = _unitOfWork.Product.AppendSasTokensForImages(_unitOfWork.Product.GetAll(includeProperties: "Category,CoverType"));
         return View(productList);
     }
 
@@ -34,7 +34,7 @@ public class HomeController : Controller
         {
             Count = 1,
             ProductId = productId,
-            Product = _unitOfWork.Product.AppendSASTokenForImage(_unitOfWork.Product.GetFirstOrDefault(u => u.Id == productId, includeProperties: "Category,CoverType")),
+            Product = _unitOfWork.Product.AppendSasTokenForImage(_unitOfWork.Product.GetFirstOrDefault(u => u.Id == productId, includeProperties: "Category,CoverType")),
         };
         return View(cartObj);
     }

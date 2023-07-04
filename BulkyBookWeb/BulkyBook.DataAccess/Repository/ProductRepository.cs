@@ -8,7 +8,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
-using Azure.Storage.Blobs;
 using BulkyBook.CloudStorage.Service;
 
 namespace BulkyBook.DataAccess.Repository
@@ -54,7 +53,7 @@ namespace BulkyBook.DataAccess.Repository
 
             foreach (var product in query)
             {
-                var imageSRS = Task.Run(async () => await _azureStorage.GenerateSASToken(product.ImageFileName)).Result;
+                var imageSRS = Task.Run(async () => await _azureStorage.GenerateSASToken()).Result;
                 product.ImageUrl += imageSRS.Uri.Query;
             }
             return query.ToList();
@@ -77,7 +76,7 @@ namespace BulkyBook.DataAccess.Repository
 
         public string AppendSASTokenToURL(Product product)
         {
-            var imageSRS = Task.Run(async () => await _azureStorage.GenerateSASToken(product.ImageFileName)).Result;
+            var imageSRS = _azureStorage.GenerateSASResult();
             return product.ImageUrl += imageSRS.Uri.Query;
         }
 

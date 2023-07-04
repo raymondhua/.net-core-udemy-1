@@ -177,16 +177,19 @@ namespace BulkyBook.CloudStorage.Repository
 
         }
 
-        public async Task<BlobClient> GenerateSASToken(string blobFileName)
+        public async Task<BlobClient> GenerateSASToken()
         {
 
             BlobContainerClient client =
                 new BlobContainerClient(_storageConfig.ConnectionString, _storageConfig.ContainerName);
 
-            BlobClient file = client.GetBlobClient(blobFileName);
-
             Uri blobSASURI = await CreateServiceSASBlob(client);
             return new BlobClient(blobSASURI);
+        }
+
+        public BlobClient GenerateSASResult()
+        {
+            return Task.Run(async () => await GenerateSASToken()).Result;
         }
 
         public static async Task<Uri> CreateServiceSASBlob(

@@ -1,5 +1,4 @@
-﻿using Azure.Storage.Blobs;
-using BulkyBook.Models;
+﻿using BulkyBook.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
