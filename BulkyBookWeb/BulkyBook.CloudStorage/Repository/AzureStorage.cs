@@ -1,4 +1,5 @@
 ﻿using Azure;
+using Azure.Storage;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using BulkyBook.CloudStorage.Service;
@@ -7,6 +8,9 @@ using BulkyBook.Utility;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Numerics;
+using Azure.Storage.Blobs.Specialized;
+using Azure.Storage.Sas;
 
 namespace BulkyBook.CloudStorage.Repository
 {
@@ -25,32 +29,6 @@ namespace BulkyBook.CloudStorage.Repository
 
         #endregion
 
-        public async Task<List<BlobDto>> ListAsync()
-        {
-            // Get a reference to a container named in appsettings.json
-            BlobContainerClient container = new BlobContainerClient(_storageConfig.ConnectionString, _storageConfig.ContainerName);
-
-            // Create a new list object for 
-            List<BlobDto> files = new List<BlobDto>();
-
-            await foreach (BlobItem file in container.GetBlobsAsync())
-            {
-                // Add each file retrieved from the storage container to the files list by creating a BlobDto object
-                string uri = container.Uri.ToString();
-                var name = file.Name;
-                var fullUri = $"{uri}/{name}";
-
-                files.Add(new BlobDto
-                {
-                    Uri = fullUri,
-                    Name = name,
-                    ContentType = file.Properties.ContentType
-                });
-            }
-
-            // Return all files to the requesting method
-            return files;
-        }
 
         public async Task<BlobResponseDto> UploadAsync(IFormFile blob)
         {
@@ -58,7 +36,8 @@ namespace BulkyBook.CloudStorage.Repository
             BlobResponseDto response = new();
 
             // Get a reference to a container named in appsettings.json and then create it
-            BlobContainerClient container = new BlobContainerClient(_storageConfig.ConnectionString, _storageConfig.ContainerName);
+            BlobContainerClient container =
+                new BlobContainerClient(_storageConfig.ConnectionString, _storageConfig.ContainerName);
             //await container.CreateAsync();
             try
             {
@@ -82,10 +61,12 @@ namespace BulkyBook.CloudStorage.Repository
             }
             // If the file already exists, we catch the exception and do not upload it
             catch (RequestFailedException ex)
-               when (ex.ErrorCode == BlobErrorCode.BlobAlreadyExists)
+                when (ex.ErrorCode == BlobErrorCode.BlobAlreadyExists)
             {
-                _logger.LogError($"File with name {blob.FileName} already exists in container. Set another name to store the file in the container: '{_storageConfig.ContainerName}.'");
-                response.Status = $"File with name {blob.FileName} already exists. Please use another name to store your file.";
+                _logger.LogError(
+                    $"File with name {blob.FileName} already exists in container. Set another name to store the file in the container: '{_storageConfig.ContainerName}.'");
+                response.Status =
+                    $"File with name {blob.FileName} already exists. Please use another name to store your file.";
                 response.Error = true;
                 return response;
             }
@@ -103,48 +84,11 @@ namespace BulkyBook.CloudStorage.Repository
             return response;
         }
 
-        public async Task<BlobDto> DownloadAsync(string blobFilename)
-        {
-            // Get a reference to a container named in appsettings.json
-            BlobContainerClient client = new BlobContainerClient(_storageConfig.ConnectionString, _storageConfig.ContainerName);
-
-            try
-            {
-                // Get a reference to the blob uploaded earlier from the API in the container from configuration settings
-                BlobClient file = client.GetBlobClient(blobFilename);
-
-                // Check if the file exists in the container
-                if (await file.ExistsAsync())
-                {
-                    var data = await file.OpenReadAsync();
-                    Stream blobContent = data;
-
-                    // Download the file details async
-                    var content = await file.DownloadContentAsync();
-
-                    // Add data to variables in order to return a BlobDto
-                    string name = blobFilename;
-                    string contentType = content.Value.Details.ContentType;
-
-                    // Create new BlobDto with blob data from variables
-                    return new BlobDto { Content = blobContent, Name = name, ContentType = contentType };
-                }
-            }
-            catch (RequestFailedException ex)
-                when (ex.ErrorCode == BlobErrorCode.BlobNotFound)
-            {
-                // Log error to console
-                _logger.LogError($"File {blobFilename} was not found.");
-            }
-
-            // File does not exist, return null and handle that in requesting method
-            return null;
-        }
-
         public async Task<BlobDto> GetAsync(string blobFilename)
         {
             // Get a reference to a container named in appsettings.json
-            BlobContainerClient client = new BlobContainerClient(_storageConfig.ConnectionString, _storageConfig.ContainerName);
+            BlobContainerClient client =
+                new BlobContainerClient(_storageConfig.ConnectionString, _storageConfig.ContainerName);
 
             try
             {
@@ -182,7 +126,8 @@ namespace BulkyBook.CloudStorage.Repository
         public async Task<bool> ImageExists(string blobFilename)
         {
             // Get a reference to a container named in appsettings.json
-            BlobContainerClient client = new BlobContainerClient(_storageConfig.ConnectionString, _storageConfig.ContainerName);
+            BlobContainerClient client =
+                new BlobContainerClient(_storageConfig.ConnectionString, _storageConfig.ContainerName);
 
             try
             {
@@ -208,7 +153,8 @@ namespace BulkyBook.CloudStorage.Repository
 
         public async Task<BlobResponseDto> DeleteAsync(string blobFilename)
         {
-            BlobContainerClient client = new BlobContainerClient(_storageConfig.ConnectionString, _storageConfig.ContainerName);
+            BlobContainerClient client =
+                new BlobContainerClient(_storageConfig.ConnectionString, _storageConfig.ContainerName);
 
             BlobClient file = client.GetBlobClient(blobFilename);
 
@@ -226,12 +172,57 @@ namespace BulkyBook.CloudStorage.Repository
             }
 
             // Return a new BlobResponseDto to the requesting method
-            return new BlobResponseDto { Error = false, Status = $"File: {blobFilename} has been successfully deleted." };
+            return new BlobResponseDto
+                { Error = false, Status = $"File: {blobFilename} has been successfully deleted." };
 
         }
 
+        public async Task<BlobClient> GenerateSASToken(string blobFileName)
+        {
 
+            BlobContainerClient client =
+                new BlobContainerClient(_storageConfig.ConnectionString, _storageConfig.ContainerName);
 
+            BlobClient file = client.GetBlobClient(blobFileName);
+
+            Uri blobSASURI = await CreateServiceSASBlob(client);
+            return new BlobClient(blobSASURI);
+        }
+
+        public static async Task<Uri> CreateServiceSASBlob(
+            BlobContainerClient blobClient,
+            string storedPolicyName = null)
+        {
+            // Check if BlobContainerClient object has been authorized with Shared Key
+            if (blobClient.CanGenerateSasUri)
+            {
+                // Create a SAS token that's valid for one day
+                BlobSasBuilder sasBuilder = new BlobSasBuilder()
+                {
+                    BlobContainerName = blobClient.Name,
+                    Resource = "b"
+                };
+
+                if (storedPolicyName == null)
+                {
+                    sasBuilder.ExpiresOn = DateTimeOffset.UtcNow.AddDays(1);
+                    sasBuilder.SetPermissions(BlobContainerSasPermissions.Read);
+                }
+                else
+                {
+                    sasBuilder.Identifier = storedPolicyName;
+                }
+
+                Uri sasURI = blobClient.GenerateSasUri(sasBuilder);
+
+                return sasURI;
+            }
+            else
+            {
+                // Client object is not authorized via Shared Key
+                return null;
+            }
+        }
     }
 }
 
