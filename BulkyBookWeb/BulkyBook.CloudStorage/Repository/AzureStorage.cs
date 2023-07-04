@@ -1,9 +1,9 @@
-﻿
-using Azure;
+﻿using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using BulkyBook.CloudStorage.Service;
 using BulkyBook.Models.StorageModels;
+using BulkyBook.Utility;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -14,14 +14,12 @@ namespace BulkyBook.CloudStorage.Repository
     {
         #region Dependency Injection / Constructor
 
-        private readonly string _storageConnectionString;
-        private readonly string _storageContainerName;
+        private readonly StorageSettings _storageConfig;
         private readonly ILogger<AzureStorage> _logger;
 
         public AzureStorage(IConfiguration configuration, ILogger<AzureStorage> logger)
         {
-            _storageConnectionString = configuration.GetConnectionString("BlobConnectionString");
-            _storageContainerName = configuration.GetConnectionString("BlobContainerName");
+            _storageConfig = configuration.GetSection("BlobStorageSettings").Get<StorageSettings>();
             _logger = logger;
         }
 
@@ -30,7 +28,7 @@ namespace BulkyBook.CloudStorage.Repository
         public async Task<List<BlobDto>> ListAsync()
         {
             // Get a reference to a container named in appsettings.json
-            BlobContainerClient container = new BlobContainerClient(_storageConnectionString, _storageContainerName);
+            BlobContainerClient container = new BlobContainerClient(_storageConfig.ConnectionString, _storageConfig.ContainerName);
 
             // Create a new list object for 
             List<BlobDto> files = new List<BlobDto>();
@@ -60,7 +58,7 @@ namespace BulkyBook.CloudStorage.Repository
             BlobResponseDto response = new();
 
             // Get a reference to a container named in appsettings.json and then create it
-            BlobContainerClient container = new BlobContainerClient(_storageConnectionString, _storageContainerName);
+            BlobContainerClient container = new BlobContainerClient(_storageConfig.ConnectionString, _storageConfig.ContainerName);
             //await container.CreateAsync();
             try
             {
@@ -86,7 +84,7 @@ namespace BulkyBook.CloudStorage.Repository
             catch (RequestFailedException ex)
                when (ex.ErrorCode == BlobErrorCode.BlobAlreadyExists)
             {
-                _logger.LogError($"File with name {blob.FileName} already exists in container. Set another name to store the file in the container: '{_storageContainerName}.'");
+                _logger.LogError($"File with name {blob.FileName} already exists in container. Set another name to store the file in the container: '{_storageConfig.ContainerName}.'");
                 response.Status = $"File with name {blob.FileName} already exists. Please use another name to store your file.";
                 response.Error = true;
                 return response;
@@ -108,7 +106,45 @@ namespace BulkyBook.CloudStorage.Repository
         public async Task<BlobDto> DownloadAsync(string blobFilename)
         {
             // Get a reference to a container named in appsettings.json
-            BlobContainerClient client = new BlobContainerClient(_storageConnectionString, _storageContainerName);
+            BlobContainerClient client = new BlobContainerClient(_storageConfig.ConnectionString, _storageConfig.ContainerName);
+
+            try
+            {
+                // Get a reference to the blob uploaded earlier from the API in the container from configuration settings
+                BlobClient file = client.GetBlobClient(blobFilename);
+
+                // Check if the file exists in the container
+                if (await file.ExistsAsync())
+                {
+                    var data = await file.OpenReadAsync();
+                    Stream blobContent = data;
+
+                    // Download the file details async
+                    var content = await file.DownloadContentAsync();
+
+                    // Add data to variables in order to return a BlobDto
+                    string name = blobFilename;
+                    string contentType = content.Value.Details.ContentType;
+
+                    // Create new BlobDto with blob data from variables
+                    return new BlobDto { Content = blobContent, Name = name, ContentType = contentType };
+                }
+            }
+            catch (RequestFailedException ex)
+                when (ex.ErrorCode == BlobErrorCode.BlobNotFound)
+            {
+                // Log error to console
+                _logger.LogError($"File {blobFilename} was not found.");
+            }
+
+            // File does not exist, return null and handle that in requesting method
+            return null;
+        }
+
+        public async Task<BlobDto> GetAsync(string blobFilename)
+        {
+            // Get a reference to a container named in appsettings.json
+            BlobContainerClient client = new BlobContainerClient(_storageConfig.ConnectionString, _storageConfig.ContainerName);
 
             try
             {
@@ -145,7 +181,7 @@ namespace BulkyBook.CloudStorage.Repository
 
         public async Task<BlobResponseDto> DeleteAsync(string blobFilename)
         {
-            BlobContainerClient client = new BlobContainerClient(_storageConnectionString, _storageContainerName);
+            BlobContainerClient client = new BlobContainerClient(_storageConfig.ConnectionString, _storageConfig.ContainerName);
 
             BlobClient file = client.GetBlobClient(blobFilename);
 
