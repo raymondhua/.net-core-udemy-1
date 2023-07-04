@@ -12,8 +12,8 @@ namespace BulkyBook.DataAccess.Repository.IRepository
     {
         void Update(Product obj);
 
-        IEnumerable<Product> AppendSASTokensForImages(IEnumerable<Product> query);
-        Product AppendSASTokenForImage(Product product);
-        string AppendSASTokenToURL(Product product);
+        IEnumerable<Product> AppendSasTokensForImages(IEnumerable<Product> query);
+        Product AppendSasTokenForImage(Product product);
+        string AppendSasTokenToUrl(Product product);
     }
 }

@@ -59,22 +59,22 @@ namespace BulkyBook.DataAccess.Repository
             return query.ToList();
         }
 
-        public IEnumerable<Product> AppendSASTokensForImages(IEnumerable<Product> query)
+        public IEnumerable<Product> AppendSasTokensForImages(IEnumerable<Product> query)
         {
             foreach (var product in query)
             {
-                product.ImageUrl = AppendSASTokenToURL(product);
+                product.ImageUrl = AppendSasTokenToUrl(product);
             }
             return query.ToList();
         }
 
-        public Product AppendSASTokenForImage(Product product)
+        public Product AppendSasTokenForImage(Product product)
         {
-            product.ImageUrl = AppendSASTokenToURL(product);
+            product.ImageUrl = AppendSasTokenToUrl(product);
             return product;
         }
 
-        public string AppendSASTokenToURL(Product product)
+        public string AppendSasTokenToUrl(Product product)
         {
             var imageSRS = _azureStorage.GenerateSASResult();
             return product.ImageUrl += imageSRS.Uri.Query;
