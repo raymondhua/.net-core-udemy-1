@@ -53,7 +53,7 @@ namespace BulkyBook.DataAccess.Repository
 
             foreach (var product in query)
             {
-                var imageSRS = Task.Run(async () => await _azureStorage.GenerateSASToken()).Result;
+                var imageSRS = Task.Run(async () => await _azureStorage.GenerateSasToken()).Result;
                 product.ImageUrl += imageSRS.Uri.Query;
             }
             return query.ToList();
@@ -63,23 +63,16 @@ namespace BulkyBook.DataAccess.Repository
         {
             foreach (var product in query)
             {
-                product.ImageUrl = AppendSasTokenToUrl(product);
+                product.ImageUrl += _azureStorage.GetSasToken();
             }
             return query.ToList();
         }
 
         public Product AppendSasTokenForImage(Product product)
         {
-            product.ImageUrl = AppendSasTokenToUrl(product);
+            product.ImageUrl += _azureStorage.GetSasToken();
             return product;
         }
-
-        public string AppendSasTokenToUrl(Product product)
-        {
-            var imageSRS = _azureStorage.GenerateSASResult();
-            return product.ImageUrl += imageSRS.Uri.Query;
-        }
-
 
     }
 }

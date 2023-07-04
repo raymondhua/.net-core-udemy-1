@@ -44,7 +44,7 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
             {
                 cart.Price = GetPriceBasedOnQuantity(cart.Count, cart.Product.Price, cart.Product.Price50,
                     cart.Product.Price100);
-                cart.Product.ImageUrl = _unitOfWork.Product.AppendSasTokenToUrl(cart.Product);
+                cart.Product.ImageUrl = _azureStorage.AppendSasTokenToUrl(cart.Product.ImageUrl);
                 ShoppingCartVM.OrderHeader.OrderTotal += (cart.Price * cart.Count);
             }
             return View(ShoppingCartVM);
@@ -194,13 +194,10 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
             HttpContext.Session.Clear();
             _unitOfWork.ShoppingCart.RemoveRange(shoppingCarts);
             _unitOfWork.Save();
-            var orderConfirmationImage = _azureStorage.GenerateSASResult();
-            string orderConfirmationImageUrl = "https://" + orderConfirmationImage.Uri.Host + orderConfirmationImage.Uri.AbsolutePath + "/" + SD.OrderConfirmationImageFileName +
-                                               orderConfirmationImage.Uri.Query;
             OrderConformationVM OrderConformationVM = new OrderConformationVM()
             {
                 OrderId = id,
-                OrderConfirmationImageURL = orderConfirmationImageUrl
+                OrderConfirmationImageURL = _azureStorage.GenerateUrlWithSasToken(SD.OrderConfirmationImageFileName)
             };
             return View(OrderConformationVM);
         }

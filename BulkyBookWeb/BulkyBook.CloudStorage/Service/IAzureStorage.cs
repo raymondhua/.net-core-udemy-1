@@ -11,7 +11,7 @@ namespace BulkyBook.CloudStorage.Service
         /// </summary>
         /// <param name="file">File for upload</param>
         /// <returns>Blob with status</returns>
-        Task<BlobResponseDto> UploadAsync(IFormFile file);
+        Task<BlobResponseDto> UploadAsync(IFormFile file, bool useGuid = true);
 
         /// <summary>
         /// This method deleted a file with the specified filename
@@ -22,7 +22,10 @@ namespace BulkyBook.CloudStorage.Service
 
         Task<bool> ImageExists(string blobFilename);
 
-        BlobClient GenerateSASResult();
-        Task<BlobClient> GenerateSASToken();
+        BlobClient GenerateSasResult();
+        Task<BlobClient> GenerateSasToken();
+        string GetSasToken();
+        string AppendSasTokenToUrl(string fileName);
+        string GenerateUrlWithSasToken(string fileName);
     }
 }

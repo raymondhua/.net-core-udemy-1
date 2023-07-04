@@ -108,13 +108,10 @@ namespace BulkyBookWeb.Areas.Admin.Controllers
                 }
             }
 
-            var orderConfirmationImage = _azureStorage.GenerateSASResult();
-            string orderConfirmationImageUrl = "https" + orderConfirmationImage.Uri + "/" + SD.OrderConfirmationImageFileName +
-                                            orderConfirmationImage.Uri.Query;
             OrderConformationVM OrderConformationVM = new OrderConformationVM()
             {
                 OrderId = orderHeaderId,
-                OrderConfirmationImageURL = orderConfirmationImageUrl
+                OrderConfirmationImageURL = _azureStorage.GenerateUrlWithSasToken(SD.OrderConfirmationImageFileName)
             };
             return View(OrderConformationVM);
         }

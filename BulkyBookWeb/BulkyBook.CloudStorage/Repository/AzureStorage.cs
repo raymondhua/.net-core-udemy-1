@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using System.Numerics;
 using Azure.Storage.Blobs.Specialized;
 using Azure.Storage.Sas;
+using BulkyBook.Models;
 
 namespace BulkyBook.CloudStorage.Repository
 {
@@ -30,7 +31,7 @@ namespace BulkyBook.CloudStorage.Repository
         #endregion
 
 
-        public async Task<BlobResponseDto> UploadAsync(IFormFile blob)
+        public async Task<BlobResponseDto> UploadAsync(IFormFile blob, bool useGuid = true)
         {
             // Create new upload response object that we can return to the requesting method
             BlobResponseDto response = new();
@@ -41,7 +42,12 @@ namespace BulkyBook.CloudStorage.Repository
             //await container.CreateAsync();
             try
             {
-                string fileName = Guid.NewGuid().ToString() + Path.GetExtension(blob.FileName);
+                string fileName;
+                if (useGuid)
+                    fileName = Guid.NewGuid().ToString() + Path.GetExtension(blob.FileName);
+                else
+                    fileName = blob.FileName;
+
                 // Get a reference to the blob just uploaded from the API in a container from configuration settings
                 BlobClient client = container.GetBlobClient(fileName);
 
@@ -136,12 +142,10 @@ namespace BulkyBook.CloudStorage.Repository
 
                 // Check if the file exists in the container
                 if (await file.ExistsAsync())
-                {
                     return true;
-                }
+
             }
-            catch (RequestFailedException ex)
-                when (ex.ErrorCode == BlobErrorCode.BlobNotFound)
+            catch (RequestFailedException ex) when (ex.ErrorCode == BlobErrorCode.BlobNotFound)
             {
                 // Log error to console
                 _logger.LogError($"File {blobFilename} was not found.");
@@ -177,22 +181,32 @@ namespace BulkyBook.CloudStorage.Repository
 
         }
 
-        public async Task<BlobClient> GenerateSASToken()
+        public async Task<BlobClient> GenerateSasToken()
         {
 
             BlobContainerClient client =
                 new BlobContainerClient(_storageConfig.ConnectionString, _storageConfig.ContainerName);
 
-            Uri blobSASURI = await CreateServiceSASBlob(client);
-            return new BlobClient(blobSASURI);
+            Uri blobSasURI = await CreateServiceSasBlob(client);
+            return new BlobClient(blobSasURI);
         }
 
-        public BlobClient GenerateSASResult()
+        public BlobClient GenerateSasResult()
         {
-            return Task.Run(async () => await GenerateSASToken()).Result;
+            return Task.Run(async () => await GenerateSasToken()).Result;
         }
 
-        public static async Task<Uri> CreateServiceSASBlob(
+        public string GetSasToken()
+        {
+            return GenerateSasResult().Uri.Query;
+        }
+
+        public string AppendSasTokenToUrl(string fileName)
+        {
+            return fileName += GenerateSasResult().Uri.Query;
+        }
+
+        public static async Task<Uri> CreateServiceSasBlob(
             BlobContainerClient blobClient,
             string storedPolicyName = null)
         {
@@ -225,6 +239,14 @@ namespace BulkyBook.CloudStorage.Repository
                 // Client object is not authorized via Shared Key
                 return null;
             }
+        }
+
+        public string GenerateUrlWithSasToken(string fileName)
+        {
+            var orderConfirmationImage = GenerateSasResult();
+            string url = "https://" + orderConfirmationImage.Uri.Host + orderConfirmationImage.Uri.AbsolutePath + "/" + fileName +
+                         orderConfirmationImage.Uri.Query;
+            return url;
         }
     }
 }
