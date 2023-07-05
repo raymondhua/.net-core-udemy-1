@@ -58,7 +58,7 @@ jobs:
 
   - task: AzureWebApp@1
     inputs:
-      azureSubscription: '<Azure service connection>'
-      appName: 'BulkyBookRay'
+      azureSubscription: '$(AzureSubscriptionId)'
+      appName: '$(AzureAppName)'
       appType: webApp
       package: $(System.DefaultWorkingDirectory)/**/*.zip
