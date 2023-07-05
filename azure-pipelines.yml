@@ -60,7 +60,7 @@ jobs:
     inputs:
       source: 'current'
       artifact: 'drop'
-      path: '$(Pipeline.Workspace)'
+      path: '$(System.DefaultWorkingDirectory)'
 
   - task: AzureRmWebAppDeployment@4
     inputs:
