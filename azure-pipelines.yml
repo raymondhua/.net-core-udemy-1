@@ -65,7 +65,7 @@ jobs:
   - task: AzureRmWebAppDeployment@4
     inputs:
       ConnectionType: 'AzureRM'
-      azureSubscription: '$(AzureServiceConnectionName)'
+      azureSubscription: 'Azure for Students(312f9249-0bf4-4c1e-8b80-7b5d443de257)'
       appType: 'webApp'
-      WebAppName: '$(AzureWebAppName)'
+      WebAppName: 'BulkyBookRay'
       packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
