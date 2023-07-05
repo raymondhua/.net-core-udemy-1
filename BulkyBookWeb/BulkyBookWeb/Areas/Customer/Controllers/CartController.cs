@@ -5,6 +5,7 @@ using BulkyBook.Models;
 using BulkyBook.Models.ViewModels;
 using BulkyBook.Utility;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Stripe;
@@ -19,15 +20,17 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
         private readonly IUnitOfWork _unitOfWork;
         private readonly IEmailSender _emailSender;
         public readonly IAzureStorage _azureStorage;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         [BindProperty]
         public ShoppingCartVM ShoppingCartVM { get; set; }
         public int OrderTotal { get; set; }
 
-        public CartController(IUnitOfWork unitOfWork, IEmailSender emailSender, IAzureStorage azureStorage)
+        public CartController(IUnitOfWork unitOfWork, IEmailSender emailSender, IAzureStorage azureStorage, IHttpContextAccessor httpContextAccessor)
         {
 	        _unitOfWork = unitOfWork;
             _emailSender = emailSender;
             _azureStorage = azureStorage;
+            _httpContextAccessor = httpContextAccessor;
         }
         public IActionResult Index()
         {
@@ -123,7 +126,8 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
             if (applicationUser.CompanyId.GetValueOrDefault() == 0)
             {
                 //Stripe settings
-                var domain = "https://localhost:44390/";
+                var domain = _httpContextAccessor.HttpContext?.Request;
+                var baseUrl = $"{domain.Scheme}://{domain.Host}";
                 var options = new SessionCreateOptions
                 {
                     PaymentMethodTypes = new List<string>
@@ -132,8 +136,8 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
                     },
                     LineItems = new List<SessionLineItemOptions>(),
                     Mode = "payment",
-                    SuccessUrl = domain + $"customer/cart/OrderConfirmation?id={ShoppingCartVM.OrderHeader.Id}",
-                    CancelUrl = domain + "customer/cart/index",
+                    SuccessUrl = baseUrl + $"/customer/cart/OrderConfirmation?id={ShoppingCartVM.OrderHeader.Id}",
+                    CancelUrl = baseUrl + "/customer/cart/index",
                 };
 
                 foreach (var item in ShoppingCartVM.ListCart)
@@ -156,6 +160,7 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
                     }
                 }
 
+                //var service = stripePayment.StripeSession(ShoppingCartVM.OrderHeader, null, ShoppingCartVM.ListCart);
                 var service = new SessionService();
                 Session session = service.Create(options);
                 _unitOfWork.OrderHeader.UpdateStripePaymentId(ShoppingCartVM.OrderHeader.Id, session.Id,

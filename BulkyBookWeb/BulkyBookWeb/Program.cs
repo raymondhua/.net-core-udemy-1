@@ -29,6 +29,7 @@ try
 
     // Add services to the container.
     builder.Services.AddControllersWithViews();
+    builder.Services.AddHttpContextAccessor();
     builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection"),
         options => options.MigrationsAssembly("BulkyBook.DataAccess")
@@ -110,6 +111,6 @@ catch (Exception ex) when (!ex.GetType().Name.Equals("StopTheHostException", Str
 finally
 {
     StaticLogger.EnsureInitialized();
-    Log.Information("Azure Storage API Shutting Down...");
+    Log.Information("BulkyBookWeb Shutting Down...");
     Log.CloseAndFlush();
 }
