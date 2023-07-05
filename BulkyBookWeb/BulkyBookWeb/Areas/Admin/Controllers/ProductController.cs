@@ -6,6 +6,8 @@ using BulkyBook.Utility;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using BulkyBook.CloudStorage.Service;
+using System.Threading.Tasks;
 
 namespace BulkyBookWeb.Areas.Admin.Controllers;
 
@@ -15,10 +17,12 @@ public class ProductController : Controller
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IWebHostEnvironment _hostEnvironment;
-    public ProductController(IUnitOfWork unitOfWork, IWebHostEnvironment hostEnvironment)
+    private readonly IAzureStorage _azureStorage;
+    public ProductController(IUnitOfWork unitOfWork, IWebHostEnvironment hostEnvironment, IAzureStorage azureStorage)
     {
         _unitOfWork = unitOfWork;
         _hostEnvironment = hostEnvironment;
+        _azureStorage = azureStorage;
     }
     public IActionResult Index()
     {
@@ -66,24 +70,19 @@ public class ProductController : Controller
             string wwwRootPath = _hostEnvironment.WebRootPath;
             if(file != null)
             {
-                string fileName = Guid.NewGuid().ToString();
-                var uploads = Path.Combine(wwwRootPath, @"images\products");
-                var extension = Path.GetExtension(file.FileName);
-
-                if (obj.Product.ImageUrl != null)
+                if (obj.Product.ImageFileName != null)
                 {
-                    var oldImagePath = Path.Combine(wwwRootPath, obj.Product.ImageUrl.TrimStart('\\'));
-                    if(System.IO.File.Exists(oldImagePath))
+                    var imageExistsResult = Task.Run(async () => await _azureStorage.ImageExists(obj.Product.ImageUrl)).Result;
+                    if (imageExistsResult != null && imageExistsResult)
                     {
-                        System.IO.File.Delete(oldImagePath);
+
+                        Task.Run(async () => await(_azureStorage.DeleteAsync(obj.Product.ImageFileName)));
                     }
                 }
 
-                using (var fileStreams = new FileStream(Path.Combine(uploads, fileName+extension), FileMode.Create))
-                {
-                    file.CopyTo(fileStreams);
-                }
-                obj.Product.ImageUrl = @"\images\products\" + fileName + extension;
+                var uploadContents = Task.Run(async () => await _azureStorage.UploadAsync(file)).Result;
+                obj.Product.ImageFileName = uploadContents.Blob.Name;
+                obj.Product.ImageUrl = uploadContents.Blob.Uri;
             }
             if(obj.Product.Id == 0)
             {
@@ -104,7 +103,7 @@ public class ProductController : Controller
     [HttpGet]
     public IActionResult GetAll()
     {
-        var productList = _unitOfWork.Product.GetAll(includeProperties:"Category,CoverType");
+        var productList = _unitOfWork.Product.GetAll(includeProperties: "Category,CoverType");
         return Json(new { data = productList });
     }
     //POST
@@ -116,10 +115,11 @@ public class ProductController : Controller
         {
             return Json(new { success = false, message = "Error while deleting" });
         }
-        var oldImagePath = Path.Combine(_hostEnvironment.WebRootPath, obj.ImageUrl.TrimStart('\\'));
-        if (System.IO.File.Exists(oldImagePath))
+        if (obj.ImageFileName != null)
         {
-            System.IO.File.Delete(oldImagePath);
+            var imageExistsResult = Task.Run(async () => await _azureStorage.ImageExists(obj.ImageFileName)).Result;
+            if (imageExistsResult != null && imageExistsResult)
+                Task.Run(async () => await _azureStorage.DeleteAsync(obj.ImageFileName));
         }
         _unitOfWork.Product.Remove(obj);
         _unitOfWork.Save();

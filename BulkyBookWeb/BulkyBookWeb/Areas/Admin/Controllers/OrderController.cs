@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Diagnostics;
 using System.Security.Claims;
+using BulkyBook.CloudStorage.Service;
 using BulkyBook.DataAccess.Repository.IRepository;
 using BulkyBook.Models;
 using BulkyBook.Models.ViewModels;
@@ -17,17 +18,16 @@ namespace BulkyBookWeb.Areas.Admin.Controllers
     public class OrderController : Controller
     {
         public readonly IUnitOfWork _unitOfWork;
+        public readonly IAzureStorage _azureStorage;
         [BindProperty]
         public OrderVM OrderVM { get; set; }
 
-        public OrderController(IUnitOfWork unitOfWork)
+        public OrderController(IUnitOfWork unitOfWork, IAzureStorage azureStorage)
         {
             _unitOfWork = unitOfWork;
+            _azureStorage = azureStorage;
         }
-        public IActionResult Index()
-        {
-            return View();
-        }
+        public IActionResult Index() => View();
         public IActionResult Details(int orderId)
         {
             OrderVM = new OrderVM()
@@ -104,7 +104,13 @@ namespace BulkyBookWeb.Areas.Admin.Controllers
                     _unitOfWork.Save();
                 }
             }
-            return View(orderHeaderId);
+
+            OrderConformationVM OrderConformationVM = new OrderConformationVM()
+            {
+                OrderId = orderHeaderId,
+                OrderConfirmationImageURL = _azureStorage.GenerateUrlWithSasToken(SD.OrderConfirmationImageFileName)
+            };
+            return View(OrderConformationVM);
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -179,9 +185,7 @@ namespace BulkyBookWeb.Areas.Admin.Controllers
                 _unitOfWork.OrderHeader.UpdateStatus(orderHeader.Id, SD.StatusCancelled, SD.StatusRefunded);
             }
             else
-            {
                 _unitOfWork.OrderHeader.UpdateStatus(orderHeader.Id, SD.StatusCancelled, SD.StatusCancelled);
-            }
             _unitOfWork.Save();
             TempData["success"] = "Order cancelled successfully";
             return RedirectToAction("Details", "Order", new { orderId = OrderVM.OrderHeader.Id });

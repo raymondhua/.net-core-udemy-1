@@ -26,5 +26,7 @@ namespace BulkyBook.Utility
         public const string PaymentStatusRejected = "Rejected";
 
         public const string SessionCart = "SessionShoppingCart";
+
+        public const string OrderConfirmationImageFileName = "lawn_leaf.jpg";
     }
 }

@@ -1,9 +1,9 @@
-﻿@model int
+﻿@model BulkyBook.Models.ViewModels.OrderConformationVM
 <div class="container row">
     <div class="col-12 text-center">
         <h1 class="text-primary text-center">Order Placed Successfully!</h1>
-        Your Order Number is : @Model <br /><br />
-        <img src="~/images/lawn_leaf.jpg" width="65%" />
+        Your Order Number is : @Model.OrderId <br /><br />
+        <img src=@Model.OrderConfirmationImageURL width="65%" />
     </div>
     <div class="col-12 text-center" style="color:maroon">
         <br />

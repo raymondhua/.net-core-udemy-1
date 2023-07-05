@@ -35,6 +35,9 @@ namespace BulkyBook.Models
         [Range(1, 100000)]
         public double Price100 { get; set; }
         [ValidateNever]
+        [Display(Name = "Image file name")]
+        public string ImageFileName { get; set; }
+        [ValidateNever]
         [Display(Name = "Image URL")]
         public string ImageUrl { get; set; }
         [Required]

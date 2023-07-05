@@ -1,4 +1,5 @@
-﻿using BulkyBook.DataAccess.Repository.IRepository;
+﻿using BulkyBook.CloudStorage.Service;
+using BulkyBook.DataAccess.Repository.IRepository;
 using BulkyBook.Models;
 using System;
 using System.Collections.Generic;
@@ -11,12 +12,12 @@ namespace BulkyBook.DataAccess.Repository
     public class UnitOfWork : IUnitOfWork
     {
         private ApplicationDbContext _db;
-        public UnitOfWork(ApplicationDbContext db)
+        public UnitOfWork(ApplicationDbContext db, IAzureStorage azureStorage)
         {
             _db = db;
             Category = new CategoryRepository(_db);
             CoverType = new CoverTypeRepository(_db);
-            Product = new ProductRepository(_db);
+            Product = new ProductRepository(_db, azureStorage);
             Company = new CompanyRepository(_db);
             ShoppingCart = new ShoppingCartRepository(_db);
             ApplicationUser = new ApplicationUserRepository(_db);

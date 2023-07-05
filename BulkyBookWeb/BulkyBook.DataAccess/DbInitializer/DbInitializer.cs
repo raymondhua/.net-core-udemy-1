@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using BulkyBook.Models;
 using Microsoft.EntityFrameworkCore;
 using BulkyBook.Utility;
+using Microsoft.Extensions.Configuration;
 
 namespace BulkyBook.DataAccess.DbInitializer
 {
@@ -17,16 +18,20 @@ namespace BulkyBook.DataAccess.DbInitializer
     {
         private readonly UserManager<IdentityUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly string _initialAdminEmail;
+        private readonly string _initialAdminPassword;
         private readonly ApplicationDbContext _db;
 
         public DbInitializer(
             UserManager<IdentityUser> userManager,
             RoleManager<IdentityRole> roleManager,
-            ApplicationDbContext db)
+            ApplicationDbContext db, IConfiguration configuration)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _db = db;
+            _initialAdminEmail = configuration.GetValue<string>("InitialAdminSettings:Email");
+            _initialAdminPassword = configuration.GetValue<string>("InitialAdminSettings:Password");
         }
         public void Initialize()
         {
@@ -42,28 +47,20 @@ namespace BulkyBook.DataAccess.DbInitializer
             {
 
             }
-            //create roles if they are not created
-            if (!_roleManager.RoleExistsAsync(SD.Role_Admin).GetAwaiter().GetResult())
-            {
-                _roleManager.CreateAsync(new IdentityRole(SD.Role_Admin)).GetAwaiter().GetResult();
-                _roleManager.CreateAsync(new IdentityRole(SD.Role_Employee)).GetAwaiter().GetResult();
-                _roleManager.CreateAsync(new IdentityRole(SD.Role_User_Indi)).GetAwaiter().GetResult();
-                _roleManager.CreateAsync(new IdentityRole(SD.Role_User_Comp)).GetAwaiter().GetResult();
-            }
             // if roles are not created, it gets created
             _userManager.CreateAsync(new ApplicationUser
             {
-                UserName = "userName@example.com",
-                Email = "userName@example.com",
+                UserName = _initialAdminEmail,
+                Email = _initialAdminEmail,
                 Name = "Ray Jackson",
                 PhoneNumber = "0271938485",
                 StreetAddress = "Test 12 Ave",
                 State = "Otago",
                 PostalCode = "9023",
                 City = "Dunedin"
-            }, "Admin@123").GetAwaiter().GetResult();
+            }, _initialAdminPassword).GetAwaiter().GetResult();
 
-            ApplicationUser user = _db.ApplicationUsers.FirstOrDefault(u => u.Email == "userName@example.com");
+            ApplicationUser user = _db.ApplicationUsers.FirstOrDefault(u => u.Email == _initialAdminEmail);
             _userManager.AddToRoleAsync(user, SD.Role_Admin).GetAwaiter().GetResult();
             return;
         }

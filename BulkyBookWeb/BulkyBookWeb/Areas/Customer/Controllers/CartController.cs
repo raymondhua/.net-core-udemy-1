@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using BulkyBook.CloudStorage.Service;
 using BulkyBook.DataAccess.Repository.IRepository;
 using BulkyBook.Models;
 using BulkyBook.Models.ViewModels;
@@ -17,20 +18,23 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IEmailSender _emailSender;
+        public readonly IAzureStorage _azureStorage;
         [BindProperty]
         public ShoppingCartVM ShoppingCartVM { get; set; }
         public int OrderTotal { get; set; }
 
-        public CartController(IUnitOfWork unitOfWork, IEmailSender emailSender)
+        public CartController(IUnitOfWork unitOfWork, IEmailSender emailSender, IAzureStorage azureStorage)
         {
 	        _unitOfWork = unitOfWork;
             _emailSender = emailSender;
+            _azureStorage = azureStorage;
         }
         public IActionResult Index()
         {
+
 	        var claimsIdentity = (ClaimsIdentity)User.Identity;
 	        var claim = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
-	        ShoppingCartVM = new ShoppingCartVM()
+            ShoppingCartVM = new ShoppingCartVM()
 	        {
 		        ListCart = _unitOfWork.ShoppingCart.GetAll(u => u.ApplicationUserId == claim.Value,
 			        includeProperties: "Product"),
@@ -40,6 +44,7 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
             {
                 cart.Price = GetPriceBasedOnQuantity(cart.Count, cart.Product.Price, cart.Product.Price50,
                     cart.Product.Price100);
+                cart.Product.ImageUrl = _azureStorage.AppendSasTokenToUrl(cart.Product.ImageUrl);
                 ShoppingCartVM.OrderHeader.OrderTotal += (cart.Price * cart.Count);
             }
             return View(ShoppingCartVM);
@@ -159,10 +164,7 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
                 Response.Headers.Add("Location", session.Url);
                 return new StatusCodeResult(303);
             }
-            else
-            {
-                return RedirectToAction("OrderConfirmation", "Cart", new { id = ShoppingCartVM.OrderHeader.Id });
-            }
+            return RedirectToAction("OrderConfirmation", "Cart", new { id = ShoppingCartVM.OrderHeader.Id });
         }
 
         public IActionResult OrderConfirmation(int id)
@@ -189,7 +191,12 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
             HttpContext.Session.Clear();
             _unitOfWork.ShoppingCart.RemoveRange(shoppingCarts);
             _unitOfWork.Save();
-            return View(id);
+            OrderConformationVM OrderConformationVM = new OrderConformationVM()
+            {
+                OrderId = id,
+                OrderConfirmationImageURL = _azureStorage.GenerateUrlWithSasToken(SD.OrderConfirmationImageFileName)
+            };
+            return View(OrderConformationVM);
         }
 
         public IActionResult Plus(int cartId)
