@@ -44,7 +44,7 @@ namespace BulkyBook.CloudStorage.Repository
             {
                 string fileName;
                 if (useGuid)
-                    fileName = Guid.NewGuid().ToString() + Path.GetExtension(blob.FileName);
+                    fileName = Guid.NewGuid() + Path.GetExtension(blob.FileName);
                 else
                     fileName = blob.FileName;
 
@@ -191,20 +191,11 @@ namespace BulkyBook.CloudStorage.Repository
             return new BlobClient(blobSasURI);
         }
 
-        public BlobClient GenerateSasResult()
-        {
-            return Task.Run(async () => await GenerateSasToken()).Result;
-        }
+        public Uri GenerateSasUri() =>  Task.Run(async () => await GenerateSasToken()).Result.Uri;
 
-        public string GetSasToken()
-        {
-            return GenerateSasResult().Uri.Query;
-        }
+        public string GetSasToken() => GenerateSasUri().Query;
 
-        public string AppendSasTokenToUrl(string fileName)
-        {
-            return fileName += GenerateSasResult().Uri.Query;
-        }
+        public string AppendSasTokenToUrl(string fileName) => fileName += GetSasToken();
 
         public static async Task<Uri> CreateServiceSasBlob(
             BlobContainerClient blobClient,
@@ -226,26 +217,21 @@ namespace BulkyBook.CloudStorage.Repository
                     sasBuilder.SetPermissions(BlobContainerSasPermissions.Read);
                 }
                 else
-                {
                     sasBuilder.Identifier = storedPolicyName;
-                }
 
                 Uri sasURI = blobClient.GenerateSasUri(sasBuilder);
 
                 return sasURI;
             }
-            else
-            {
-                // Client object is not authorized via Shared Key
-                return null;
-            }
+            // Client object is not authorized via Shared Key
+            return null;
         }
 
         public string GenerateUrlWithSasToken(string fileName)
         {
-            var orderConfirmationImage = GenerateSasResult();
-            string url = "https://" + orderConfirmationImage.Uri.Host + orderConfirmationImage.Uri.AbsolutePath + "/" + fileName +
-                         orderConfirmationImage.Uri.Query;
+            var uri = GenerateSasUri();
+            string url = "https://" + uri.Host + uri.AbsolutePath + "/" + fileName +
+                         uri.Query;
             return url;
         }
     }

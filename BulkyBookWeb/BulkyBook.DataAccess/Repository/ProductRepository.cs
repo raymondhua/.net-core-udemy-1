@@ -37,13 +37,9 @@ namespace BulkyBook.DataAccess.Repository
                 objFromDb.Author = obj.Author;
                 objFromDb.CoverTypeId = obj.CoverTypeId;
                 if(obj.ImageUrl != null)
-                {
                     objFromDb.ImageUrl = obj.ImageUrl;
-                }
-                if (obj.ImageFileName != null)
-                {
+                if (obj.ImageFileName != null) 
                     objFromDb.ImageFileName = obj.ImageFileName;
-                }
             }
         }
         //includeProp "Category,CoverType"
@@ -62,9 +58,7 @@ namespace BulkyBook.DataAccess.Repository
         public IEnumerable<Product> AppendSasTokensForImages(IEnumerable<Product> query)
         {
             foreach (var product in query)
-            {
                 product.ImageUrl += _azureStorage.GetSasToken();
-            }
             return query.ToList();
         }
 

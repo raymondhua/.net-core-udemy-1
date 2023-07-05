@@ -27,10 +27,7 @@ namespace BulkyBookWeb.Areas.Admin.Controllers
             _unitOfWork = unitOfWork;
             _azureStorage = azureStorage;
         }
-        public IActionResult Index()
-        {
-            return View();
-        }
+        public IActionResult Index() => View();
         public IActionResult Details(int orderId)
         {
             OrderVM = new OrderVM()
@@ -188,9 +185,7 @@ namespace BulkyBookWeb.Areas.Admin.Controllers
                 _unitOfWork.OrderHeader.UpdateStatus(orderHeader.Id, SD.StatusCancelled, SD.StatusRefunded);
             }
             else
-            {
                 _unitOfWork.OrderHeader.UpdateStatus(orderHeader.Id, SD.StatusCancelled, SD.StatusCancelled);
-            }
             _unitOfWork.Save();
             TempData["success"] = "Order cancelled successfully";
             return RedirectToAction("Details", "Order", new { orderId = OrderVM.OrderHeader.Id });
