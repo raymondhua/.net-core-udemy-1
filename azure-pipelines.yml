@@ -68,4 +68,4 @@ jobs:
       azureSubscription: 'Azure for Students(312f9249-0bf4-4c1e-8b80-7b5d443de257)'
       appType: 'webApp'
       WebAppName: 'BulkyBookRay'
-      packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
+      packageForLinux: '$(System.DefaultWorkingDirectory)/BulkyBookWeb.zip'
