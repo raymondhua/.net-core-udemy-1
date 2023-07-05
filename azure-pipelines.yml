@@ -63,7 +63,7 @@ jobs:
 
   - task: AzureWebApp@1
     inputs:
-      azureSubscription: '$(AzureServiceConnectionName)'
-      appName: '$(AzureAppName)'
+      azureSubscription: $(AzureServiceConnectionName)
+      appName: $(AzureAppName)
       appType: webApp
       package: $(System.DefaultWorkingDirectory)/**/*.zip
