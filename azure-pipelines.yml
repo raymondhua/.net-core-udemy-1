@@ -42,7 +42,6 @@ jobs:
       platform: '$(buildPlatform)'
       configuration: '$(buildConfiguration)'
 
-jobs:
 - job: deploy
   dependsOn: buildandtest
   condition: succeeded()
