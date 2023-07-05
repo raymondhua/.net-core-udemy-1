@@ -10,7 +10,7 @@ pool:
   vmImage: 'windows-latest'
 
 variables:
-  solution: '/BulkyBook.sln'
+  solution: 'BulkyBookWeb/BulkyBook.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
 
