@@ -6,35 +6,60 @@
 trigger:
 - main
 
-pool:
-  vmImage: 'windows-latest'
+jobs:
+- job: buildandtest
 
-variables:
-  solution: 'BulkyBookWeb/BulkyBook.sln'
-  buildPlatform: 'Any CPU'
-  buildConfiguration: 'Release'
+  pool:
+    vmImage: 'windows-latest'
 
-steps:
-- task: NuGetToolInstaller@1
+  variables:
+    solution: 'BulkyBookWeb/BulkyBook.sln'
+    buildPlatform: 'Any CPU'
+    buildConfiguration: 'Release'
 
-- task: NuGetCommand@2
-  inputs:
-    restoreSolution: '$(solution)'
+  steps:
+  - task: NuGetToolInstaller@1
 
-- task: FileTransform@1
-  inputs:
-    folderPath: '$(System.DefaultWorkingDirectory)/'
-    fileType: 'json'
-    targetFiles: 'BulkyBookWeb/BulkyBookWeb/appsettings.json'
+  - task: NuGetCommand@2
+    inputs:
+      restoreSolution: '$(solution)'
 
-- task: VSBuild@1
-  inputs:
-    solution: '$(solution)'
-    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+  - task: FileTransform@1
+    inputs:
+      folderPath: '$(System.DefaultWorkingDirectory)/'
+      fileType: 'json'
+      targetFiles: 'BulkyBookWeb/BulkyBookWeb/appsettings.json'
 
-- task: VSTest@2
-  inputs:
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+  - task: VSBuild@1
+    inputs:
+      solution: '$(solution)'
+      msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
+      platform: '$(buildPlatform)'
+      configuration: '$(buildConfiguration)'
+
+  - task: VSTest@2
+    inputs:
+      platform: '$(buildPlatform)'
+      configuration: '$(buildConfiguration)'
+
+jobs:
+- job: deploy
+  dependsOn: buildandtest
+  condition: succeeded()
+
+  pool:
+    vmImage: 'windows-latest'
+    
+  steps:
+  - task: DownloadPipelineArtifact@2
+    inputs:
+      source: 'current'
+      artifact: 'drop'
+      path: '$(Pipeline.Workspace)'
+
+  - task: AzureWebApp@1
+    inputs:
+      azureSubscription: '<Azure service connection>'
+      appName: 'BulkyBookRay'
+      appType: webApp
+      package: $(System.DefaultWorkingDirectory)/**/*.zip
