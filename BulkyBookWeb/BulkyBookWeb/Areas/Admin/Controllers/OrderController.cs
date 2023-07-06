@@ -21,7 +21,6 @@ namespace BulkyBookWeb.Areas.Admin.Controllers
         public readonly IUnitOfWork _unitOfWork;
         public readonly IAzureStorage _azureStorage;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly StripePayment stripePayment;
         [BindProperty]
         public OrderVM OrderVM { get; set; }
 
@@ -30,7 +29,6 @@ namespace BulkyBookWeb.Areas.Admin.Controllers
             _unitOfWork = unitOfWork;
             _azureStorage = azureStorage;
             _httpContextAccessor = httpContextAccessor;
-            stripePayment = new StripePayment(_httpContextAccessor);
         }
         public IActionResult Index() => View();
         public IActionResult Details(int orderId)
@@ -51,7 +49,7 @@ namespace BulkyBookWeb.Areas.Admin.Controllers
                 includeProperties: "ApplicationUser");
             OrderVM.OrderDetail = _unitOfWork.OrderDetail.GetAll(u => u.OrderId == OrderVM.OrderHeader.Id,
                 includeProperties: "Product");
-            var options = stripePayment.StripeSession(OrderVM.OrderHeader, OrderVM.OrderDetail, null, false);
+            var options = StripePayment.GeneratePayment(_httpContextAccessor, OrderVM.OrderHeader.Id, OrderVM.OrderDetail, false);
             var service = new SessionService();
             Session session = service.Create(options);
             _unitOfWork.OrderHeader.UpdateStripePaymentId(OrderVM.OrderHeader.Id, session.Id,

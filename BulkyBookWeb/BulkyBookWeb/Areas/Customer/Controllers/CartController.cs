@@ -22,7 +22,6 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
         private readonly IEmailSender _emailSender;
         public readonly IAzureStorage _azureStorage;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly StripePayment stripePayment;
         [BindProperty]
         public ShoppingCartVM ShoppingCartVM { get; set; }
         public int OrderTotal { get; set; }
@@ -33,12 +32,10 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
             _emailSender = emailSender;
             _azureStorage = azureStorage;
             _httpContextAccessor = httpContextAccessor;
-            stripePayment = new StripePayment(_httpContextAccessor);
         }
         public IActionResult Index()
         {
-
-	        var claimsIdentity = (ClaimsIdentity)User.Identity;
+            var claimsIdentity = (ClaimsIdentity)User.Identity;
 	        var claim = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
             ShoppingCartVM = new ShoppingCartVM()
 	        {
@@ -128,7 +125,9 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
 
             if (applicationUser.CompanyId.GetValueOrDefault() == 0)
             {
-                var options = stripePayment.StripeSession(ShoppingCartVM.OrderHeader, null, ShoppingCartVM.ListCart);
+                IEnumerable<OrderDetail> orderDetails = _unitOfWork.OrderDetail.GetAll(u => u.OrderId == ShoppingCartVM.OrderHeader.Id,
+                    includeProperties: "Product");
+                var options = StripePayment.GeneratePayment(_httpContextAccessor, ShoppingCartVM.OrderHeader.Id, orderDetails);
                 var service = new SessionService();
                 Session session = service.Create(options);
                 _unitOfWork.OrderHeader.UpdateStripePaymentId(ShoppingCartVM.OrderHeader.Id, session.Id,
