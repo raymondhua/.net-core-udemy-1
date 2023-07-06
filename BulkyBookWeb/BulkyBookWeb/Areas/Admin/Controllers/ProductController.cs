@@ -24,10 +24,7 @@ public class ProductController : Controller
         _hostEnvironment = hostEnvironment;
         _azureStorage = azureStorage;
     }
-    public IActionResult Index()
-    {
-        return View();
-    }
+    public IActionResult Index() => View();
     //GET
     public IActionResult Upsert(int? id)
     {
@@ -74,10 +71,7 @@ public class ProductController : Controller
                 {
                     var imageExistsResult = Task.Run(async () => await _azureStorage.ImageExists(obj.Product.ImageUrl)).Result;
                     if (imageExistsResult != null && imageExistsResult)
-                    {
-
                         Task.Run(async () => await(_azureStorage.DeleteAsync(obj.Product.ImageFileName)));
-                    }
                 }
 
                 var uploadContents = Task.Run(async () => await _azureStorage.UploadAsync(file)).Result;
@@ -85,13 +79,9 @@ public class ProductController : Controller
                 obj.Product.ImageUrl = uploadContents.Blob.Uri;
             }
             if(obj.Product.Id == 0)
-            {
                 _unitOfWork.Product.Add(obj.Product);
-            }
             else
-            {
                 _unitOfWork.Product.Update(obj.Product);
-            }
             _unitOfWork.Save();
             TempData["success"] = "Product created successfully";
             return RedirectToAction("Index");
@@ -112,9 +102,7 @@ public class ProductController : Controller
     {
         var obj = _unitOfWork.Product.GetFirstOrDefault(u => u.Id == id);
         if (obj == null)
-        {
             return Json(new { success = false, message = "Error while deleting" });
-        }
         if (obj.ImageFileName != null)
         {
             var imageExistsResult = Task.Run(async () => await _azureStorage.ImageExists(obj.ImageFileName)).Result;

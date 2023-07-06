@@ -24,20 +24,15 @@ public class CategoryController : Controller
         return View(objCategoryList);
     }
     //GET
-    public IActionResult Create()
-    {
+    public IActionResult Create() => View();
 
-        return View();
-    }
     //POST
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult Create(Category obj)
     {
         if (obj.Name == obj.DisplayOrder.ToString())
-        {
             ModelState.AddModelError("name", "The DisplayOrder cannot be exactly be the same");
-        }
         if (ModelState.IsValid)
         {
             _unitOfWork.Category.Add(obj);
@@ -51,16 +46,12 @@ public class CategoryController : Controller
     public IActionResult Edit(int? id)
     {
         if (id == null || id == 0)
-        {
             return NotFound();
-        }
         //var categoryFromDb = _unitOfWork.Category.Find(id);
         var categoryFromDbFirst = _unitOfWork.Category.GetFirstOrDefault(u => u.Id == id);
         //var categoryFromDbSingle = _unitOfWork.Category.SingleOrDefault(u => u.Id == id);
         if (categoryFromDbFirst == null)
-        {
             return NotFound();
-        }
         return View(categoryFromDbFirst);
     }
     //POST
@@ -69,9 +60,7 @@ public class CategoryController : Controller
     public IActionResult Edit(Category obj)
     {
         if (obj.Name == obj.DisplayOrder.ToString())
-        {
             ModelState.AddModelError("name", "The DisplayOrder cannot be exactly be the same");
-        }
         if (ModelState.IsValid)
         {
             _unitOfWork.Category.Update(obj);
@@ -85,16 +74,12 @@ public class CategoryController : Controller
     public IActionResult Delete(int? id)
     {
         if (id == null || id == 0)
-        {
             return NotFound();
-        }
         //var categoryFromDb = _db.Categories.Find(id);
         var categoryFromDbFirst = _unitOfWork.Category.GetFirstOrDefault(u => u.Id == id);
         //var categoryFromDbSingle = _db.Categories.SingleOrDefault(u => u.Id == id);
         if (categoryFromDbFirst == null)
-        {
             return NotFound();
-        }
         return View(categoryFromDbFirst);
     }
     //POST
@@ -104,9 +89,7 @@ public class CategoryController : Controller
     {
         var obj = _unitOfWork.Category.GetFirstOrDefault(u => u.Id == id);
         if (obj == null)
-        {
             return NotFound();
-        }
         _unitOfWork.Category.Remove(obj);
         _unitOfWork.Save();
         TempData["success"] = "Category deleted successfully";

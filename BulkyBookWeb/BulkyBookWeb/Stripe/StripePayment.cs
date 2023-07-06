@@ -21,7 +21,7 @@ namespace BulkyBookWeb.Stripe
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public SessionService StripeSession(OrderHeader orderHeader, IEnumerable<OrderDetail> orderDetail = null, IEnumerable <ShoppingCart> shoppingCart = null, bool customer = true)
+        public SessionCreateOptions StripeSession(OrderHeader orderHeader, IEnumerable<OrderDetail>? orderDetail = null, IEnumerable <ShoppingCart>? shoppingCart = null, bool customer = true)
         {
             //Stripe settings
             var domain = _httpContextAccessor.HttpContext?.Request;
@@ -29,13 +29,13 @@ namespace BulkyBookWeb.Stripe
             string successUrl, cancelUrl;
             if (customer)
             {
-                successUrl = domain + $"customer/cart/OrderConfirmation?id={orderHeader.Id}";
-                cancelUrl = domain + "customer/cart/index";
+                successUrl = baseUrl + $"/customer/cart/OrderConfirmation?id={orderHeader.Id}";
+                cancelUrl = baseUrl + "/customer/cart/index";
             }
             else
             {
-                successUrl = domain + $"admin/order/PaymentConfirmation?orderHeaderId={orderHeader.Id}";
-                cancelUrl = domain + $"admin/order/details?orderId={orderHeader.Id}";
+                successUrl = baseUrl + $"/admin/order/PaymentConfirmation?orderHeaderId={orderHeader.Id}";
+                cancelUrl = baseUrl + $"/admin/order/details?orderId={orderHeader.Id}";
             }
             var options = new SessionCreateOptions
             {
@@ -48,7 +48,7 @@ namespace BulkyBookWeb.Stripe
                 SuccessUrl = successUrl,
                 CancelUrl = cancelUrl,
             };
-
+            
             string currency = "usd";
             if (orderDetail != null)
             {
@@ -94,7 +94,7 @@ namespace BulkyBookWeb.Stripe
                     }
                 }
             }
-            return new SessionService();
+            return options;
         }
     }
 }

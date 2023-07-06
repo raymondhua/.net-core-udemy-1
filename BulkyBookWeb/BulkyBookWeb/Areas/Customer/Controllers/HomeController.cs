@@ -55,7 +55,7 @@ public class HomeController : Controller
         {
             _unitOfWork.ShoppingCart.Add(shoppingCart);
             _unitOfWork.Save();
-            HttpContext.Session.SetInt32(SD.SessionCart,
+            HttpContext.Session.SetInt32(SD.SessionCart, 
                 _unitOfWork.ShoppingCart.GetAll(u=> u.ApplicationUserId == claim.Value).ToList().Count);
         }
         else
@@ -67,15 +67,10 @@ public class HomeController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    public IActionResult Privacy()
-    {
-        return View();
-    }
+    public IActionResult Privacy() => View();
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error()
-    {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-    }
+    public IActionResult Error() => View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+
 }
 

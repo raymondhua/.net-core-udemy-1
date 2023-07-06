@@ -4,6 +4,7 @@ using BulkyBook.DataAccess.Repository.IRepository;
 using BulkyBook.Models;
 using BulkyBook.Models.ViewModels;
 using BulkyBook.Utility;
+using BulkyBookWeb.Stripe;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -125,42 +126,8 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
 
             if (applicationUser.CompanyId.GetValueOrDefault() == 0)
             {
-                //Stripe settings
-                var domain = _httpContextAccessor.HttpContext?.Request;
-                var baseUrl = $"{domain.Scheme}://{domain.Host}";
-                var options = new SessionCreateOptions
-                {
-                    PaymentMethodTypes = new List<string>
-                    {
-                        "card",
-                    },
-                    LineItems = new List<SessionLineItemOptions>(),
-                    Mode = "payment",
-                    SuccessUrl = baseUrl + $"/customer/cart/OrderConfirmation?id={ShoppingCartVM.OrderHeader.Id}",
-                    CancelUrl = baseUrl + "/customer/cart/index",
-                };
-
-                foreach (var item in ShoppingCartVM.ListCart)
-                {
-                    {
-                        var sessionLineItem = new SessionLineItemOptions
-                        {
-                            PriceData = new SessionLineItemPriceDataOptions
-                            {
-                                UnitAmount = (long)(item.Price * 100), //20.00 -> 2000
-                                Currency = "usd",
-                                ProductData = new SessionLineItemPriceDataProductDataOptions
-                                {
-                                    Name = item.Product.Title,
-                                },
-                            },
-                            Quantity = item.Count,
-                        };
-                        options.LineItems.Add(sessionLineItem);
-                    }
-                }
-
-                //var service = stripePayment.StripeSession(ShoppingCartVM.OrderHeader, null, ShoppingCartVM.ListCart);
+                StripePayment stripePayment = new StripePayment(_httpContextAccessor);
+                var options = stripePayment.StripeSession(ShoppingCartVM.OrderHeader, null, ShoppingCartVM.ListCart);
                 var service = new SessionService();
                 Session session = service.Create(options);
                 _unitOfWork.OrderHeader.UpdateStripePaymentId(ShoppingCartVM.OrderHeader.Id, session.Id,
@@ -189,8 +156,8 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
                 }
             }
 
-            _emailSender.SendEmailAsync(orderHeader.ApplicationUser.Email, "New Order - Bulky Book",
-                "<p>New Order Created</p>");
+            /*_emailSender.SendEmailAsync(orderHeader.ApplicationUser.Email, "New Order - Bulky Book",
+                "<p>New Order Created</p>");*/
             List<ShoppingCart> shoppingCarts = _unitOfWork.ShoppingCart.GetAll(u => u.ApplicationUserId ==
                 orderHeader.ApplicationUserId).ToList();
             HttpContext.Session.Clear();
@@ -216,24 +183,19 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
         {
             var cart = _unitOfWork.ShoppingCart.GetFirstOrDefault(u => u.Id == cartId);
             if (cart.Count <= 1)
-            {
-                _unitOfWork.ShoppingCart.Remove(cart);
-                var count = _unitOfWork.ShoppingCart.GetAll(u => u.ApplicationUserId == cart.ApplicationUserId).ToList().Count()-1;
-                HttpContext.Session.SetInt32(SD.SessionCart, count);
-            }
+                RemoveItemFromCart(cart);
             else
+            {
                 _unitOfWork.ShoppingCart.DecrementCount(cart, 1);
-            _unitOfWork.Save();
+                _unitOfWork.Save();
+            }
             return RedirectToAction(nameof(Index));
         }
 
         public IActionResult Remove(int cartId)
         {
             var cart = _unitOfWork.ShoppingCart.GetFirstOrDefault(u => u.Id == cartId);
-            _unitOfWork.ShoppingCart.Remove(cart);
-            _unitOfWork.Save();
-            var count = _unitOfWork.ShoppingCart.GetAll(u => u.ApplicationUserId == cart.ApplicationUserId).ToList().Count();
-            HttpContext.Session.SetInt32(SD.SessionCart, count);
+            RemoveItemFromCart(cart);
             return RedirectToAction(nameof(Index));
         }
 
@@ -247,6 +209,14 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
                     return price50;
                 return price100;
             }
+        }
+
+        public void RemoveItemFromCart(ShoppingCart cart)
+        {
+            _unitOfWork.ShoppingCart.Remove(cart);
+            _unitOfWork.Save();
+            var count = _unitOfWork.ShoppingCart.GetAll(u => u.ApplicationUserId == cart.ApplicationUserId).ToList().Count();
+            HttpContext.Session.SetInt32(SD.SessionCart, count);
         }
     }
 }
