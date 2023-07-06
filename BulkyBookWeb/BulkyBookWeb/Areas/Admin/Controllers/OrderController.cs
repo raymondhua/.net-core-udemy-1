@@ -6,6 +6,7 @@ using BulkyBook.DataAccess.Repository.IRepository;
 using BulkyBook.Models;
 using BulkyBook.Models.ViewModels;
 using BulkyBook.Utility;
+using BulkyBookWeb.Stripe;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Stripe;
@@ -20,6 +21,7 @@ namespace BulkyBookWeb.Areas.Admin.Controllers
         public readonly IUnitOfWork _unitOfWork;
         public readonly IAzureStorage _azureStorage;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly StripePayment stripePayment;
         [BindProperty]
         public OrderVM OrderVM { get; set; }
 
@@ -28,6 +30,7 @@ namespace BulkyBookWeb.Areas.Admin.Controllers
             _unitOfWork = unitOfWork;
             _azureStorage = azureStorage;
             _httpContextAccessor = httpContextAccessor;
+            stripePayment = new StripePayment(_httpContextAccessor);
         }
         public IActionResult Index() => View();
         public IActionResult Details(int orderId)
@@ -48,41 +51,7 @@ namespace BulkyBookWeb.Areas.Admin.Controllers
                 includeProperties: "ApplicationUser");
             OrderVM.OrderDetail = _unitOfWork.OrderDetail.GetAll(u => u.OrderId == OrderVM.OrderHeader.Id,
                 includeProperties: "Product");
-            //Stripe settings
-            var domain = _httpContextAccessor.HttpContext?.Request;
-            var baseUrl = $"{domain.Scheme}://{domain.Host}";
-            var options = new SessionCreateOptions
-            {
-                PaymentMethodTypes = new List<string>
-                {
-                    "card",
-                },
-                LineItems = new List<SessionLineItemOptions>(),
-                Mode = "payment",
-                SuccessUrl = domain + $"/admin/order/PaymentConfirmation?orderHeaderId={OrderVM.OrderHeader.Id}",
-                CancelUrl = domain + $"/admin/order/details?orderId={OrderVM.OrderHeader.Id}",
-            };
-
-            foreach (var item in OrderVM.OrderDetail)
-            {
-                {
-                    var sessionLineItem = new SessionLineItemOptions
-                    {
-                        PriceData = new SessionLineItemPriceDataOptions
-                        {
-                            UnitAmount = (long)(item.Price * 100), //20.00 -> 2000
-                            Currency = "usd",
-                            ProductData = new SessionLineItemPriceDataProductDataOptions
-                            {
-                                Name = item.Product.Title,
-                            },
-                        },
-                        Quantity = item.Count,
-                    };
-                    options.LineItems.Add(sessionLineItem);
-                }
-            }
-
+            var options = stripePayment.StripeSession(OrderVM.OrderHeader, OrderVM.OrderDetail, null, false);
             var service = new SessionService();
             Session session = service.Create(options);
             _unitOfWork.OrderHeader.UpdateStripePaymentId(OrderVM.OrderHeader.Id, session.Id,

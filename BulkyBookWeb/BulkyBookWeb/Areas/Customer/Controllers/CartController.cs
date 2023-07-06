@@ -22,6 +22,7 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
         private readonly IEmailSender _emailSender;
         public readonly IAzureStorage _azureStorage;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly StripePayment stripePayment;
         [BindProperty]
         public ShoppingCartVM ShoppingCartVM { get; set; }
         public int OrderTotal { get; set; }
@@ -32,6 +33,7 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
             _emailSender = emailSender;
             _azureStorage = azureStorage;
             _httpContextAccessor = httpContextAccessor;
+            stripePayment = new StripePayment(_httpContextAccessor);
         }
         public IActionResult Index()
         {
@@ -126,7 +128,6 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
 
             if (applicationUser.CompanyId.GetValueOrDefault() == 0)
             {
-                StripePayment stripePayment = new StripePayment(_httpContextAccessor);
                 var options = stripePayment.StripeSession(ShoppingCartVM.OrderHeader, null, ShoppingCartVM.ListCart);
                 var service = new SessionService();
                 Session session = service.Create(options);
