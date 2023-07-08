@@ -58,6 +58,8 @@ stages:
     - deployment: Deploy
       pool:
         vmImage: 'windows-latest'
+      variables:
+        ASPNETCORE_ENVIRONMENT: 'Staging'
       environment: Staging
       strategy:
         runOnce:
@@ -77,7 +79,7 @@ stages:
                 appType: 'webApp'
                 WebAppName: 'BulkyBookRay-staging'
                 packageForLinux: '$(System.DefaultWorkingDirectory)/BulkyBookWeb.zip'
-                SlotName: 'staging'
+                SlotName: 'Staging'
         
   - stage: deploy_to_production
     displayName: Deploy to Production
