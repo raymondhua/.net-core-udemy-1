@@ -53,7 +53,7 @@ stages:
 
   - stage: deploy_to_staging
     displayName: Deploy to Staging
-    dependsOn: build_and_test
+    dependsOn: build_test_publish
     jobs:
     - deployment: Deploy
       pool:
