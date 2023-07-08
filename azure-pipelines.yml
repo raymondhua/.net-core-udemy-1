@@ -58,8 +58,6 @@ stages:
     - deployment: Deploy
       pool:
         vmImage: 'windows-latest'
-      variables:
-        ASPNETCORE_ENVIRONMENT: 'Staging'
       environment: Staging
       strategy:
         runOnce:
@@ -88,6 +86,7 @@ stages:
     - deployment: Deploy
       pool:
         vmImage: 'windows-latest'
+      environment: Production
       strategy:
         runOnce:
           deploy:
