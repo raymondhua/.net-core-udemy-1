@@ -12,6 +12,8 @@ using System.Numerics;
 using Azure.Storage.Blobs.Specialized;
 using Azure.Storage.Sas;
 using BulkyBook.Models;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 
 namespace BulkyBook.CloudStorage.Repository
 {
@@ -21,11 +23,11 @@ namespace BulkyBook.CloudStorage.Repository
 
         private readonly StorageSettings _storageConfig;
         private readonly ILogger<AzureStorage> _logger;
-
-        public AzureStorage(IConfiguration configuration, ILogger<AzureStorage> logger)
+        public AzureStorage(IConfiguration configuration, ILogger<AzureStorage> logger, IWebHostEnvironment env)
         {
-            _storageConfig = configuration.GetSection("BlobStorageSettings").Get<StorageSettings>();
             _logger = logger;
+            _storageConfig = configuration.GetSection("BlobStorageSettings").Get<StorageSettings>();
+            _storageConfig.ContainerName = _storageConfig.ContainerEnvironmentNames[env.EnvironmentName];
         }
 
         #endregion

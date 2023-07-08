@@ -41,7 +41,7 @@ namespace BulkyBookWeb.Stripe
                 LineItems = new List<SessionLineItemOptions>(),
                 Mode = "payment",
                 SuccessUrl = successUrl,
-                CancelUrl = cancelUrl,
+                CancelUrl = cancelUrl
             };
 
             string currency = "usd";
@@ -57,7 +57,7 @@ namespace BulkyBookWeb.Stripe
                             ProductData = new SessionLineItemPriceDataProductDataOptions
                             {
                                 Name = item.Product.Title,
-                            },
+                            }
                         },
                         Quantity = item.Count,
                     };

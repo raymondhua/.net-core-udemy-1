@@ -24,7 +24,6 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
         private readonly IHttpContextAccessor _httpContextAccessor;
         [BindProperty]
         public ShoppingCartVM ShoppingCartVM { get; set; }
-        public int OrderTotal { get; set; }
 
         public CartController(IUnitOfWork unitOfWork, IEmailSender emailSender, IAzureStorage azureStorage, IHttpContextAccessor httpContextAccessor)
         {
@@ -61,8 +60,10 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
                 ListCart = _unitOfWork.ShoppingCart.GetAll(u => u.ApplicationUserId == claim.Value,
                     includeProperties: "Product"),
                 OrderHeader = new()
+                {
+                    ApplicationUser = _unitOfWork.ApplicationUser.GetFirstOrDefault(u => u.Id == claim.Value)
+                }
             };
-            ShoppingCartVM.OrderHeader.ApplicationUser = _unitOfWork.ApplicationUser.GetFirstOrDefault(u => u.Id == claim.Value);
             ShoppingCartVM.OrderHeader.Name = ShoppingCartVM.OrderHeader.ApplicationUser.Name;
             ShoppingCartVM.OrderHeader.PhoneNumber = ShoppingCartVM.OrderHeader.ApplicationUser.PhoneNumber;
             ShoppingCartVM.OrderHeader.StreetAddress = ShoppingCartVM.OrderHeader.ApplicationUser.StreetAddress;
