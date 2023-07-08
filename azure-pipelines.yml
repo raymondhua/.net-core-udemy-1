@@ -55,47 +55,47 @@ stages:
     displayName: Deploy to Staging
     dependsOn: build_and_test
     jobs:
-    - job: deploy
-    
+    - deployment: Deploy
+      environment: Staging
       pool:
         vmImage: 'windows-latest'
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+            - task: DownloadPipelineArtifact@2
+              inputs:
+                source: 'current'
+                artifact: 'drop'
+                path: '$(System.DefaultWorkingDirectory)'
+
+            - task: AzureRmWebAppDeployment@4
+              inputs:
+                ConnectionType: 'AzureRM'
+                azureSubscription: 'Azure for Students(312f9249-0bf4-4c1e-8b80-7b5d443de257)'
+                appType: 'webApp'
+                WebAppName: 'BulkyBookRay-staging'
+                packageForLinux: '$(System.DefaultWorkingDirectory)/BulkyBookWeb.zip'
+                SlotName: 'staging'
         
-      steps:
-      - task: DownloadPipelineArtifact@2
-        inputs:
-          source: 'current'
-          artifact: 'drop'
-          path: '$(System.DefaultWorkingDirectory)'
-
-      - task: AzureRmWebAppDeployment@4
-        inputs:
-          ConnectionType: 'AzureRM'
-          azureSubscription: 'Azure for Students(312f9249-0bf4-4c1e-8b80-7b5d443de257)'
-          appType: 'webApp'
-          WebAppName: 'BulkyBookRay-staging'
-          packageForLinux: '$(System.DefaultWorkingDirectory)/BulkyBookWeb.zip'
-          SlotName: 'staging'
-  
-  - stage: deploy_to_production
-    displayName: Deploy to Production
-    dependsOn: deploy_to_staging
-    jobs:
-    - job: deploy
-
+    - deployment: Deploy
+      environment: Production
       pool:
         vmImage: 'windows-latest'
-        
-      steps:
-      - task: DownloadPipelineArtifact@2
-        inputs:
-          source: 'current'
-          artifact: 'drop'
-          path: '$(System.DefaultWorkingDirectory)'
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+            - task: DownloadPipelineArtifact@2
+              inputs:
+                source: 'current'
+                artifact: 'drop'
+                path: '$(System.DefaultWorkingDirectory)'
 
-      - task: AzureRmWebAppDeployment@4
-        inputs:
-          ConnectionType: 'AzureRM'
-          azureSubscription: 'Azure for Students(312f9249-0bf4-4c1e-8b80-7b5d443de257)'
-          appType: 'webApp'
-          WebAppName: 'BulkyBookRay'
-          packageForLinux: '$(System.DefaultWorkingDirectory)/BulkyBookWeb.zip'
+            - task: AzureRmWebAppDeployment@4
+              inputs:
+                ConnectionType: 'AzureRM'
+                azureSubscription: 'Azure for Students(312f9249-0bf4-4c1e-8b80-7b5d443de257)'
+                appType: 'webApp'
+                WebAppName: 'BulkyBookRay'
+                packageForLinux: '$(System.DefaultWorkingDirectory)/BulkyBookWeb.zip'
