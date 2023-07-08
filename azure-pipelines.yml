@@ -8,7 +8,7 @@ trigger:
 - main
 
 stages:
-  - stage: build-and-test
+  - stage: build_and_test
     displayName: Build and test
     jobs:
     - job: build-and-test
@@ -51,9 +51,9 @@ stages:
           targetPath: '$(Build.ArtifactStagingDirectory)' 
           artifactName: drop
 
-  - stage: deploy-to-staging
+  - stage: deploy_to_staging
     displayName: Deploy to Staging
-    dependsOn: build-and-test
+    dependsOn: build_and_test
     jobs:
     - job: deploy
     
@@ -76,9 +76,9 @@ stages:
           packageForLinux: '$(System.DefaultWorkingDirectory)/BulkyBookWeb.zip'
           SlotName: 'staging'
   
-  - stage: deploy-to-production
+  - stage: deploy_to_production
     displayName: Deploy to Production
-    dependsOn: deploy-to-staging
+    dependsOn: deploy_to_staging
     jobs:
     - job: deploy
 
