@@ -21,9 +21,7 @@ namespace BulkyBookWeb.ViewComponents
             if (claim != null)
             {
                 if (HttpContext.Session.GetInt32(SD.SessionCart) != null)
-                {
                     return View(HttpContext.Session.GetInt32(SD.SessionCart));
-                }
                 else
                 {
                     HttpContext.Session.SetInt32(SD.SessionCart,
@@ -31,11 +29,8 @@ namespace BulkyBookWeb.ViewComponents
                     return View(HttpContext.Session.GetInt32(SD.SessionCart));
                 }
             }
-            else
-            {
-                HttpContext.Session.Clear();
-                return View(0);
-            }
+            HttpContext.Session.Clear();
+            return View(0);
         }
     }
 }

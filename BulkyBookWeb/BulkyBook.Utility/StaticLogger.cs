@@ -1,4 +1,5 @@
 ﻿using Serilog;
+using Serilog.Events;
 
 namespace BulkyBook.CloudStorage.Common
 {
@@ -11,6 +12,7 @@ namespace BulkyBook.CloudStorage.Common
                 Log.Logger = new LoggerConfiguration()
                     .Enrich.FromLogContext()
                     .WriteTo.Console()
+                    //.WriteTo.AzureTableStorage(connectionString, LogEventLevel.Information)
                     .CreateLogger();
             }
         }

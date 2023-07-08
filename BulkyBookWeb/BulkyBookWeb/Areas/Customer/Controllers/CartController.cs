@@ -4,6 +4,7 @@ using BulkyBook.DataAccess.Repository.IRepository;
 using BulkyBook.Models;
 using BulkyBook.Models.ViewModels;
 using BulkyBook.Utility;
+using BulkyBookWeb.Stripe;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -23,7 +24,6 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
         private readonly IHttpContextAccessor _httpContextAccessor;
         [BindProperty]
         public ShoppingCartVM ShoppingCartVM { get; set; }
-        public int OrderTotal { get; set; }
 
         public CartController(IUnitOfWork unitOfWork, IEmailSender emailSender, IAzureStorage azureStorage, IHttpContextAccessor httpContextAccessor)
         {
@@ -34,8 +34,7 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
         }
         public IActionResult Index()
         {
-
-	        var claimsIdentity = (ClaimsIdentity)User.Identity;
+            var claimsIdentity = (ClaimsIdentity)User.Identity;
 	        var claim = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
             ShoppingCartVM = new ShoppingCartVM()
 	        {
@@ -61,8 +60,10 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
                 ListCart = _unitOfWork.ShoppingCart.GetAll(u => u.ApplicationUserId == claim.Value,
                     includeProperties: "Product"),
                 OrderHeader = new()
+                {
+                    ApplicationUser = _unitOfWork.ApplicationUser.GetFirstOrDefault(u => u.Id == claim.Value)
+                }
             };
-            ShoppingCartVM.OrderHeader.ApplicationUser = _unitOfWork.ApplicationUser.GetFirstOrDefault(u => u.Id == claim.Value);
             ShoppingCartVM.OrderHeader.Name = ShoppingCartVM.OrderHeader.ApplicationUser.Name;
             ShoppingCartVM.OrderHeader.PhoneNumber = ShoppingCartVM.OrderHeader.ApplicationUser.PhoneNumber;
             ShoppingCartVM.OrderHeader.StreetAddress = ShoppingCartVM.OrderHeader.ApplicationUser.StreetAddress;
@@ -125,42 +126,9 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
 
             if (applicationUser.CompanyId.GetValueOrDefault() == 0)
             {
-                //Stripe settings
-                var domain = _httpContextAccessor.HttpContext?.Request;
-                var baseUrl = $"{domain.Scheme}://{domain.Host}";
-                var options = new SessionCreateOptions
-                {
-                    PaymentMethodTypes = new List<string>
-                    {
-                        "card",
-                    },
-                    LineItems = new List<SessionLineItemOptions>(),
-                    Mode = "payment",
-                    SuccessUrl = baseUrl + $"/customer/cart/OrderConfirmation?id={ShoppingCartVM.OrderHeader.Id}",
-                    CancelUrl = baseUrl + "/customer/cart/index",
-                };
-
-                foreach (var item in ShoppingCartVM.ListCart)
-                {
-                    {
-                        var sessionLineItem = new SessionLineItemOptions
-                        {
-                            PriceData = new SessionLineItemPriceDataOptions
-                            {
-                                UnitAmount = (long)(item.Price * 100), //20.00 -> 2000
-                                Currency = "usd",
-                                ProductData = new SessionLineItemPriceDataProductDataOptions
-                                {
-                                    Name = item.Product.Title,
-                                },
-                            },
-                            Quantity = item.Count,
-                        };
-                        options.LineItems.Add(sessionLineItem);
-                    }
-                }
-
-                //var service = stripePayment.StripeSession(ShoppingCartVM.OrderHeader, null, ShoppingCartVM.ListCart);
+                IEnumerable<OrderDetail> orderDetails = _unitOfWork.OrderDetail.GetAll(u => u.OrderId == ShoppingCartVM.OrderHeader.Id,
+                    includeProperties: "Product");
+                var options = StripePayment.GeneratePayment(_httpContextAccessor, ShoppingCartVM.OrderHeader.Id, orderDetails);
                 var service = new SessionService();
                 Session session = service.Create(options);
                 _unitOfWork.OrderHeader.UpdateStripePaymentId(ShoppingCartVM.OrderHeader.Id, session.Id,
@@ -189,8 +157,8 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
                 }
             }
 
-            _emailSender.SendEmailAsync(orderHeader.ApplicationUser.Email, "New Order - Bulky Book",
-                "<p>New Order Created</p>");
+            /*_emailSender.SendEmailAsync(orderHeader.ApplicationUser.Email, "New Order - Bulky Book",
+                "<p>New Order Created</p>");*/
             List<ShoppingCart> shoppingCarts = _unitOfWork.ShoppingCart.GetAll(u => u.ApplicationUserId ==
                 orderHeader.ApplicationUserId).ToList();
             HttpContext.Session.Clear();
@@ -216,24 +184,19 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
         {
             var cart = _unitOfWork.ShoppingCart.GetFirstOrDefault(u => u.Id == cartId);
             if (cart.Count <= 1)
-            {
-                _unitOfWork.ShoppingCart.Remove(cart);
-                var count = _unitOfWork.ShoppingCart.GetAll(u => u.ApplicationUserId == cart.ApplicationUserId).ToList().Count()-1;
-                HttpContext.Session.SetInt32(SD.SessionCart, count);
-            }
+                RemoveItemFromCart(cart);
             else
+            {
                 _unitOfWork.ShoppingCart.DecrementCount(cart, 1);
-            _unitOfWork.Save();
+                _unitOfWork.Save();
+            }
             return RedirectToAction(nameof(Index));
         }
 
         public IActionResult Remove(int cartId)
         {
             var cart = _unitOfWork.ShoppingCart.GetFirstOrDefault(u => u.Id == cartId);
-            _unitOfWork.ShoppingCart.Remove(cart);
-            _unitOfWork.Save();
-            var count = _unitOfWork.ShoppingCart.GetAll(u => u.ApplicationUserId == cart.ApplicationUserId).ToList().Count();
-            HttpContext.Session.SetInt32(SD.SessionCart, count);
+            RemoveItemFromCart(cart);
             return RedirectToAction(nameof(Index));
         }
 
@@ -247,6 +210,14 @@ namespace BulkyBookWeb.Areas.Customer.Controllers
                     return price50;
                 return price100;
             }
+        }
+
+        public void RemoveItemFromCart(ShoppingCart cart)
+        {
+            _unitOfWork.ShoppingCart.Remove(cart);
+            _unitOfWork.Save();
+            var count = _unitOfWork.ShoppingCart.GetAll(u => u.ApplicationUserId == cart.ApplicationUserId).ToList().Count();
+            HttpContext.Session.SetInt32(SD.SessionCart, count);
         }
     }
 }

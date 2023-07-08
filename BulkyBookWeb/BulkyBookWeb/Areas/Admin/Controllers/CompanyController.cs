@@ -31,16 +31,10 @@ public class CompanyController : Controller
         Company company = new();
 
         if (id == null || id == 0)
-        {
-            //create company
-            return View(company);
-        }
-        else
-        {
-            //update company
-            company = _unitOfWork.Company.GetFirstOrDefault(u => u.Id == id);
-            return View(company);
-        }
+            return View(company); //create company
+        //update company
+        company = _unitOfWork.Company.GetFirstOrDefault(u => u.Id == id);
+        return View(company);
     }
     //POST
     [HttpPost]
@@ -79,9 +73,7 @@ public class CompanyController : Controller
     {
         var obj = _unitOfWork.Company.GetFirstOrDefault(u => u.Id == id);
         if (obj == null)
-        {
             return Json(new { success = false, message = "Error while deleting" });
-        }
         _unitOfWork.Company.Remove(obj);
         _unitOfWork.Save();
         return Json(new { success = true, message = "Delete Successful" });

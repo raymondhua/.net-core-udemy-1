@@ -10,5 +10,6 @@ namespace BulkyBook.Utility
     {
         public string? ConnectionString { get; set; }
         public string? ContainerName { get; set; }
+        public Dictionary<string, string> ContainerEnvironmentNames { get; set; }
     }
 }

@@ -12,13 +12,14 @@ using Serilog;
 using BulkyBook.CloudStorage.Common;
 using BulkyBook.CloudStorage.Repository;
 using BulkyBook.CloudStorage.Service;
+using Microsoft.Extensions.Hosting;
 
-StaticLogger.EnsureInitialized();
-Log.Information("Azure Storage API Booting Up...");
 
 try
 {
     var builder = WebApplication.CreateBuilder(args);
+    StaticLogger.EnsureInitialized();
+    Log.Information("BulkyBookWeb loading...");
 
     builder.Host.UseSerilog((_, config) =>
     {
@@ -30,8 +31,11 @@ try
     // Add services to the container.
     builder.Services.AddControllersWithViews();
     builder.Services.AddHttpContextAccessor();
+    //builder.Configuration.AddUserSecrets<Program>();
+    string environmentName = builder.Environment.EnvironmentName;
+    Log.Information("Environment: " + environmentName);
     builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
+        builder.Configuration.GetConnectionString(environmentName),
         options => options.MigrationsAssembly("BulkyBook.DataAccess")
     ));
     builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));

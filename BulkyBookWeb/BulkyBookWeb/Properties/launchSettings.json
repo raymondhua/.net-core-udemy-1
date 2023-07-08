@@ -9,6 +9,24 @@
       "dotnetRunMessages": true,
       "applicationUrl": "https://localhost:7006;http://localhost:5037"
     },
+    "Staging": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Staging"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://localhost:7006;http://localhost:5037"
+    },
+    "Production": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Production"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://localhost:7006;http://localhost:5037"
+    },
     "IIS Express": {
       "commandName": "IISExpress",
       "launchBrowser": true,
