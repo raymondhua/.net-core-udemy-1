@@ -56,13 +56,14 @@ stages:
     dependsOn: build_and_test
     jobs:
     - deployment: Deploy
-      environment: Staging
+      environment: staging
       pool:
         vmImage: 'windows-latest'
       strategy:
         runOnce:
           deploy:
             steps:
+
             - task: DownloadPipelineArtifact@2
               inputs:
                 source: 'current'
@@ -78,8 +79,12 @@ stages:
                 packageForLinux: '$(System.DefaultWorkingDirectory)/BulkyBookWeb.zip'
                 SlotName: 'staging'
         
+  - stage: deploy_to_production
+    displayName: Deploy to Production
+    dependsOn: deploy_to_staging
+    jobs:
     - deployment: Deploy
-      environment: Production
+      environment: Staging
       pool:
         vmImage: 'windows-latest'
       strategy:
