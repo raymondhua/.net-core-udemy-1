@@ -11,7 +11,7 @@ stages:
   - stage: build_and_test
     displayName: Build and test
     jobs:
-    - job: build-and-test
+    - job: build_and_test
 
       pool:
         vmImage: 'windows-latest'
