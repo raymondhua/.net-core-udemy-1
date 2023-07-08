@@ -8,8 +8,8 @@ trigger:
 - main
 
 stages:
-  - stage: build_and_test
-    displayName: Build and test
+  - stage: build_test_publish
+    displayName: Build, test and publish
     jobs:
     - job: build_and_test
 
@@ -56,9 +56,11 @@ stages:
     dependsOn: build_and_test
     jobs:
     - deployment: Deploy
-      environment: staging
       pool:
         vmImage: 'windows-latest'
+      variables:
+        ASPNETCORE_ENVIRONMENT: 'Staging'
+      environment: Staging
       strategy:
         runOnce:
           deploy:
@@ -84,7 +86,6 @@ stages:
     dependsOn: deploy_to_staging
     jobs:
     - deployment: Deploy
-      environment: Staging
       pool:
         vmImage: 'windows-latest'
       strategy:
