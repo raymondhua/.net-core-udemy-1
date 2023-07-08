@@ -55,10 +55,8 @@ stages:
     displayName: Deploy to Staging
     dependsOn: build-and-test
     jobs:
-    - environment: Staging
     - job: deploy
     
-
       pool:
         vmImage: 'windows-latest'
         
