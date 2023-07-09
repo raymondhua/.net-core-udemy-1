@@ -11,7 +11,7 @@ stages:
   - stage: build_test_publish
     displayName: Build, test and publish
     jobs:
-    - job: build_and_test
+    - job: build
 
       pool:
         vmImage: 'windows-latest'
@@ -42,6 +42,7 @@ stages:
           configuration: '$(buildConfiguration)'
 
     - job: test
+      dependsOn: build
 
       pool:
         vmImage: 'windows-latest'
@@ -57,6 +58,7 @@ stages:
           configuration: '$(buildConfiguration)'
 
     - job: publish
+      dependsOn: test
 
       pool:
         vmImage: 'windows-latest'
