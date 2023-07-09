@@ -31,7 +31,7 @@ try
     // Add services to the container.
     builder.Services.AddControllersWithViews();
     builder.Services.AddHttpContextAccessor();
-    //builder.Configuration.AddUserSecrets<Program>();
+    builder.Configuration.AddUserSecrets<Program>();
     string environmentName = builder.Environment.EnvironmentName;
     Log.Information("Environment: " + environmentName);
     builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(
