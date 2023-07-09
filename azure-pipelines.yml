@@ -41,11 +41,27 @@ stages:
           platform: '$(buildPlatform)'
           configuration: '$(buildConfiguration)'
 
+    - job: test
+
+      pool:
+        vmImage: 'windows-latest'
+
+      variables:
+        solution: 'BulkyBookWeb/BulkyBook.sln'
+        buildPlatform: 'Any CPU'
+        buildConfiguration: 'Release'
+      steps:
       - task: VSTest@2
         inputs:
           platform: '$(buildPlatform)'
           configuration: '$(buildConfiguration)'
-          
+
+    - job: publish
+
+      pool:
+        vmImage: 'windows-latest'
+
+      steps:
       - task: PublishPipelineArtifact@1
         inputs:
           targetPath: '$(Build.ArtifactStagingDirectory)' 
